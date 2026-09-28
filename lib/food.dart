@@ -34,23 +34,23 @@ class UnitName extends Tag {
 }
 
 sealed class Unit {
-  const factory(UnitName name, {required Unit baseUnit, required num unitsPerBaseUnit}) = _Unit;
+  const factory(UnitName name, {required Unit baseUnit, required double unitsPerBaseUnit}) = _Unit;
 
   const new _(this.name);
 
   final UnitName name;
 
-  num? get inGrams;
-  num? get inMilliliters;
+  double? get inGrams;
+  double? get inMilliliters;
 
   static const BaseUnit g = BaseUnit(
     UnitName('g', full: 'gram', fullPlural: 'grams'), //
-    inGrams: 1,
+    inGrams: 1.0,
   );
   static const Unit mg = Unit(
     UnitName('mg', full: 'milligram', fullPlural: 'milligrams'),
     baseUnit: g,
-    unitsPerBaseUnit: 1000,
+    unitsPerBaseUnit: 1000.0,
   );
 
   static const BaseUnit lb = BaseUnit(
@@ -60,36 +60,36 @@ sealed class Unit {
   static const Unit oz = Unit(
     UnitName('oz', full: 'ounce', fullPlural: 'ounces'),
     baseUnit: lb,
-    unitsPerBaseUnit: 16,
+    unitsPerBaseUnit: 16.0,
   );
 
   static const liter = BaseUnit(
     UnitName('liter', plural: 'liters', superShort: 'l'),
-    inMilliliters: 1000,
+    inMilliliters: 1000.0,
   );
   static const ml = BaseUnit(
     UnitName('ml', full: 'milliliter', fullPlural: 'milliliters'),
-    inMilliliters: 1,
+    inMilliliters: 1.0,
   );
 
   static const BaseUnit cup = BaseUnit(
     UnitName('cup', plural: 'cups', superShort: 'c'),
-    inMilliliters: 240,
+    inMilliliters: 240.0,
   );
   static const Unit tbsp = Unit(
     UnitName('tbsp', full: 'tablespoon', fullPlural: 'tablespoons', superShort: 'T'),
     baseUnit: cup,
-    unitsPerBaseUnit: 16,
+    unitsPerBaseUnit: 16.0,
   );
   static const Unit tsp = Unit(
     UnitName('tsp', full: 'teaspoon', fullPlural: 'teaspoons', superShort: 't'),
     baseUnit: tbsp,
-    unitsPerBaseUnit: 3,
+    unitsPerBaseUnit: 3.0,
   );
   static const Unit flOz = Unit(
     UnitName('fl. oz', full: 'fluid ounce', fullPlural: 'fluid ounces', superShort: 'oz'),
     baseUnit: cup,
-    unitsPerBaseUnit: 8,
+    unitsPerBaseUnit: 8.0,
   );
 }
 
@@ -98,17 +98,17 @@ class _Unit extends Unit {
 
   final Unit baseUnit;
 
-  final num unitsPerBaseUnit;
+  final double unitsPerBaseUnit;
 
   @override
-  num? get inGrams => switch (baseUnit.inGrams) {
-    final num baseGrams => baseGrams / unitsPerBaseUnit,
+  double? get inGrams => switch (baseUnit.inGrams) {
+    final double baseGrams => baseGrams / unitsPerBaseUnit,
     null => null,
   };
 
   @override
-  num? get inMilliliters => switch (baseUnit.inMilliliters) {
-    final num baseMilliliters => baseMilliliters / unitsPerBaseUnit,
+  double? get inMilliliters => switch (baseUnit.inMilliliters) {
+    final double baseMilliliters => baseMilliliters / unitsPerBaseUnit,
     null => null,
   };
 }
@@ -119,8 +119,8 @@ class BaseUnit extends Unit {
       super._();
 
   @override
-  final num? inGrams;
+  final double? inGrams;
 
   @override
-  final num? inMilliliters;
+  final double? inMilliliters;
 }
