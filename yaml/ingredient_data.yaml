@@ -1,0 +1,546 @@
+whole wheat flour:
+  serving size: 1 cup
+  servings per container: 20.0
+  container price: 4.00
+  nutrition facts:
+    Calories: 408 Cal
+    Total Fat: 3 g
+    Saturated Fat: 0.5 g
+    Total Carbs: 86 g
+    Fiber: 13 g
+    Sugar: 0.5 g
+    Protein: 16 g
+    Vitamins:
+      Calcium: 47 mg
+      Iron: 5 mg
+      Magnesium: 170 mg
+      Phosphorus: 440 mg
+      Potassium: 470 mg
+      Copper: 565 µg
+      Manganese: 4.45 mg
+      Selenium: 30 µg
+      Molybdenum: 73 µg
+      Thiamin: 630 µg
+      Riboflavin: 160 µg
+      Niacin: 7.5 mg
+      Vitamin B6: 335 µg
+      Folic Acid: 48 µg
+      Zinc: 4 mg
+
+white flour:
+  serving size: 1 cup
+  servings per container: 20.0
+  container price: 2.30
+  nutrition facts:
+    Calories: 455 Cal
+    Total Fat: 1.2 g
+    Saturated Fat: 0.2 g
+    Total Carbs: 95 g
+    Fiber: 3.4 g
+    Sugar: 0.3 g
+    Protein: 13 g
+    Vitamins:
+      Calcium: 40 mg
+      Iron: 5.2 mg
+      Potassium: 200 mg
+      Thiamin: 800 µg
+      Riboflavin: 400 µg
+      Niacin: 7.2 mg
+
+lupin flour:
+  serving size: 1/4 cup
+  servings per container: 45.0
+  container price: 35.00
+  nutrition facts:
+    Calories: 110 Cal
+    Total Fat: 2.5 g
+    Saturated Fat: 0.35 g
+    Total Carbs: 12 g
+    Fiber: 11 g
+    Sugar: 0.5 g
+    Protein: 11 g
+    Vitamins:
+      Calcium: 52.8 mg
+      Iron: 1.31 mg
+      Potassium: 304 mg
+      Thiamin: 180 µg
+      Riboflavin: 78 µg
+      Folic Acid: 100 µg
+      Phosphorus: 125 mg
+      Magnesium: 63 mg
+      Zinc: 1.65 mg
+      Copper: 315 µg
+
+oats:
+  serving size: 1/2 cup
+  servings per container: 30.0
+  container price: 4.70
+  nutrition facts:
+    Calories: 150 Cal
+    Total Fat: 2.5 g
+    Total Carbs: 27 g
+    Fiber: 4 g
+    Sugar: 1 g
+    Protein: 5 g
+    Vitamins:
+      Calcium: 21 mg
+      Iron: 1 mg
+      Potassium: 145 mg
+
+popcorn:
+  serving size: 2 tbsp
+  servings per container: 28.33
+  container price: 3.00
+  nutrition facts:
+    Calories: 110 Cal
+    Total Fat: 1.5 g
+    Total Carbs: 22 g
+    Fiber: 4 g
+    Protein: 3 g
+    Vitamins:
+      Calcium: 2 mg
+      Iron: 1 mg
+      Potassium: 82 mg
+
+yellow cornmeal:
+  serving size: 3 T
+  servings per container: 25.0
+  container price: 2.00
+  nutrition facts:
+    Calories: 90 Cal
+    Total Carbs: 21 g
+    Fiber: 1 g
+    Protein: 2 g
+    Vitamins:
+      Calcium: 2 mg
+      Iron: 1 mg
+      Potassium: 200 mg
+      Thiamin: 100 µg
+      Folic Acid: 36 µg
+      Riboflavin: 100 µg
+      Niacin: 1 mg
+
+fortified premium yeast flakes:
+  serving size: 2 T
+  servings per container: 26.0
+  container price: 12.00
+  nutrition facts:
+    Calories: 60 Cal
+    Sodium: 27 mg
+    Total Carbs: 6 g
+    Fiber: 4 g
+    Protein: 8 g
+    Vitamins:
+      Vitamin B6: 10 mg
+      Calcium: 10 mg
+      Iron: 1 mg
+      Potassium: 320 mg
+      Thiamin: 10 mg
+      Folic Acid: 1040 µg
+      Riboflavin: 10 mg
+      Niacin: 46 mg
+
+chia seeds:
+  serving size: 4 T
+  servings per container: 33.0
+  container price: 10.50
+  nutrition facts:
+    Calories: 150 Cal
+    Total Fat: 9 g
+    Saturated Fat: 1 g
+    Sodium: 5 mg
+    Total Carbs: 13 g
+    Fiber: 10 g
+    Protein: 5 g
+    Vitamins:
+      Calcium: 189 mg
+      Iron: 2 mg
+      Potassium: 120 mg
+
+rye flour:
+  serving size: 1/4 cup
+  servings per container: 71.0
+  container price: 15.00
+  nutrition facts:
+    Total Fat: 0.5 g
+    Total Carbs: 22 g
+    Fiber: 8 g
+    Protein: 5 g
+    Vitamins:
+      Potassium: 230 mg
+      Iron: 0.7 mg
+
+potato flakes:
+  serving size: 1/3 cup
+  servings per container: 25.0
+  container price: 9.26
+  nutrition facts:
+    Total Carbs: 15 g
+    Fiber: 1 g
+    Protein: 1 g
+    Vitamins:
+      Potassium: 209 mg
+
+wheat gluten:
+  serving size: 1/4 cup
+  servings per container: 60.0
+  container price: 25.00
+  nutrition facts:
+    Calories: 110 Cal
+    Total Fat: 1.5 g
+    Total Carbs: 4 g
+    Protein: 23 g
+    Vitamins:
+      Calcium: 13 mg
+      Iron: 1.3 mg
+      Potassium: 25 mg
+
+erythritol:
+  serving size: 2 tsp
+  servings per container: 226.0
+  container price: 16.00
+  nutrition facts:
+    Total Carbs: 8 g
+    Sugar Alcohol: 8 g
+
+allulose:
+  serving size: 1 tsp
+  servings per container: 340.25
+  container price: 25.60
+  nutrition facts:
+    Total Carbs: 4 g
+
+soy milk:
+  serving size: 1 cup
+  servings per container: 8
+  container price: 4.00
+  nutrition facts:
+    Calories: 80 Cal
+    Total Fat: 4 g
+    Saturated Fat: 0.5 g
+    Sodium: 75 mg
+    Total Carbs: 3 g
+    Fiber: 2 g
+    Sugar: 1 g
+    Protein: 7 g
+    Vitamins:
+      Vitamin D: 3 µg
+      Calcium: 300 mg
+      Potassium: 300 mg
+      Iron: 1 mg
+      Vitamin A: 140 µg
+      Folic Acid: 40 µg
+      Phosphorus: 80 mg
+      Riboflavin: 0.44 mg
+      Vitamin B12: 2.5 µg
+      Magnesium: 35 µg
+
+oat milk:
+  serving size: 1 cup
+  servings per container: 6
+  container price: 4.30
+  nutrition facts:
+    Calories: 45 Cal
+    Total Fat: 0.5 g
+    Sodium: 100 mg
+    Total Carbs: 8 g
+    Fiber: 1 g
+    Sugar: 0 g
+    Protein: 1 g
+    Vitamins:
+      Vitamin D: 4 µg
+      Calcium: 350 mg
+      Iron: 0.7 mg
+      Potassium: 340 mg
+      Vitamin A: 180 µg
+      Riboflavin: 0.13 mg
+      Vitamin B12: 0.24 µg
+
+pizza sauce: # Great Value
+  serving size: 1/4 cup
+  servings per container: 6
+  container price: 4.30
+  nutrition facts:
+    Calories: 25 Cal
+    Total Fat: 1 g
+    Sodium: 250 mg
+    Total Carbs: 4 g
+    Fiber: 1 g
+    Sugar: 2 g
+    Protein: 1 g
+    Vitamins:
+      Potassium: 175 mg
+
+plant-based mozzarella: # Daiya
+  serving size: 1 oz
+  servings per container: 7
+  container price: 6.00
+  nutrition facts:
+    Calories: 25 Cal
+    Total Fat: 5 g
+    Saturated Fat: 3 g
+    Sodium: 230 mg
+    Total Carbs: 8 g
+    Vitamins:
+      Calcium: 165 mg
+      Potassium: 20 mg
+
+plant-based sausage:
+  serving size: 2 oz
+  servings per container: 7
+  container price: 4.00
+  nutrition facts:
+    Calories: 130 Cal
+    Total Fat: 9 g
+    Saturated Fat: 4 g
+    Sodium: 380 mg
+    Total Carbs: 5 g
+    Fiber: 1 g
+    Protein: 7 g
+    Vitamins:
+      Calcium: 90 mg
+      Iron: 1.4 mg
+      Potassium: 210 mg
+      Riboflavin: 195 µg
+      Niacin: 4 mg
+      Vitamin B6: 0.17 mg
+      Folic Acid: 40 µg
+      Vitamin B12: 1 µg
+      Zinc: 3 mg
+
+salt:
+  serving size: 1/4 tsp
+  servings per container: 491.0
+  container price: 0.70
+  nutrition facts:
+    Sodium: 575 mg
+    Vitamins:
+      Iodine: 67 µg
+
+canola oil:
+  serving size: 1 tbsp
+  servings per container: 96.0
+  container price: 4.00
+  nutrition facts:
+    Calories: 120 Cal
+    Total Fat: 14 g
+    Saturated Fat: 1 g
+
+margarine:
+  serving size: 1 tbsp
+  servings per container: 32.0
+  container price: 1.80
+  nutrition facts:
+    Calories: 60 Cal
+    Total Fat: 7 g
+    Saturated Fat: 3 g
+    Sodium: 105 mg
+    Vitamins:
+      Vitamin A: 90 µg
+
+coconut oil:
+  serving size: 1 tbsp
+  servings per container: 120.0
+  container price: 13.44
+  nutrition facts:
+    Calories: 120 Cal
+    Total Fat: 14 g
+    Saturated Fat: 12 g
+
+plant-based butter:
+  serving size: 1 tbsp
+  servings per container: 16.0
+  container price: 6.00
+  nutrition facts:
+    Calories: 90 Cal
+    Total Fat: 10 g
+    Saturated Fat: 8 g
+    Sodium: 65 mg
+    Total Carbs: 3 g
+    Vitamins:
+      Calcium: 1 mg
+      Potassium: 4 mg
+
+plant cream:
+  serving size: 1 tbsp
+  servings per container: 33.0
+  container price: 3.99
+  nutrition facts:
+    Calories: 45 Cal
+    Total Fat: 4.5 g
+    Saturated Fat: 2.5 g
+    Sodium: 5 mg
+
+plant-based cream cheese:
+  serving size: 2 tbsp
+  servings per container: 7.0
+  container price: 3.80
+  nutrition facts:
+    Calories: 90 Cal
+    Total Fat: 8 g
+    Saturated Fat: 8 g
+    Sodium: 125 mg
+    Total Carbs: 3 g
+
+plant-based sour cream:
+  serving size: 1 oz
+  servings per container: 14.0
+  container price: 4.00
+  nutrition facts:
+    Calories: 40 Cal
+    Total Fat: 3.5 g
+    Saturated Fat: 3 g
+    Sodium: 65 mg
+    Total Carbs: 2 g
+    Fiber: 1 g
+
+glycerin:
+  serving size: 1 tsp
+  servings per container: 192.0
+  container price: 21.57
+  nutrition facts:
+    Calories: 22 Cal
+    Total Carbs: 5 g
+
+vanilla:
+  serving size: 1 T
+  servings per container: 16.0
+  container price: 1.46
+  nutrition facts:
+    Calories: 0 Cal
+
+peanut butter:
+  serving size: 2 T
+  servings per container: 16.0
+  container price: 1.84
+  nutrition facts:
+    Calories: 190 Cal
+    Total Fat: 15 g
+    Saturated Fat: 3 g
+    Sodium: 120 mg
+    Total Carbs: 8 g
+    Fiber: 2 g
+    Sugar: 3 g
+    Protein: 7 g
+    Vitamins:
+      Calcium: 20 mg
+      Iron: 0.5 mg
+      Potassium: 190 mg
+
+molasses:
+  serving size: 1 T
+  servings per container: 16.0
+  container price: 4.00
+  nutrition facts:
+    Calories: 60 Cal
+    Sodium: 5 mg
+    Total Carbs: 16 g
+    Fiber: 1 g
+    Sugar: 15 g
+    Vitamins:
+      Calcium: 30 mg
+      Iron: 0.7 mg
+      Potassium: 200 mg
+      Magnesium: 10 mg
+
+cocoa powder:
+  serving size: 1 T
+  servings per container: 45.0
+  container price: 2.48
+  nutrition facts:
+    Calories: 20 Cal
+    Total Fat: 0.5 g
+    Total Carbs: 3 g
+    Fiber: 2 g
+    Protein: 1 g
+    Vitamins:
+      Iron: 0.8 mg
+      Potassium: 94 mg
+
+white vinegar:
+  serving size: 1 T
+  servings per container: 63.0
+  container price: 1.30
+  nutrition facts:
+    Calories: 0 Cal
+
+baking powder:
+  serving size: 1/4 tsp
+  servings per container: 191.0
+  container price: 3.50
+  nutrition facts:
+    Sodium: 122 mg
+
+baking soda:
+  serving size: 1/8 tsp
+  servings per container: 755.0
+  container price: 1.00
+  nutrition facts:
+    Sodium: 160 mg
+
+sucralose:
+  serving size: 1 tsp
+  servings per container: 15625.0
+  container price: 28.96
+  nutrition facts:
+    Calories: 0 Cal
+
+Splenda:
+  serving size: 2 tsp
+  servings per container: 2000.0
+  container price: 38.00
+  nutrition facts:
+    Calories: 3 Cal
+    Total Carbs: 0.9 g
+
+soy protein:
+  serving size: 5 tbsp
+  servings per container: 57
+  container price: 30.00
+  nutrition facts:
+    Calories: 110 Cal
+    Total Fat: 0.5 g
+    Protein: 25 g
+    Vitamins:
+      Calcium: 20 mg
+      Iron: 3 mg
+      Vitamin D: 3 µg
+      Potassium: 172 mg
+
+yeast:
+  serving size: 1/4 tsp
+  servings per container: 132.0
+  container price: 6.50
+  nutrition facts:
+    Calories: 3 Cal
+    Sodium: 2 mg
+    Total Carbs: 0.3 g
+    Protein: 0.3 g
+    Vitamins:
+      Potassium: 10 mg
+      Phosphorus: 7 mg
+
+sunflower lecithin:
+  serving size: 4 tsp
+  servings per container: 45.0
+  container price: 21.00
+  nutrition facts:
+    Calories: 50 Cal
+    Total Fat: 5 g
+    Saturated Fat: 1 g
+    Vitamins:
+      Calcium: 25 mg
+      Iron: 0.3 mg
+      Potassium: 80 mg
+      Phosphorus: 270 mg
+
+guar gum:
+  serving size: 1 tsp
+  servings per container: 259.0
+  container price: 3.50
+  nutrition facts:
+    Calories: 10 Cal
+    Total Carbs: 3 g
+    Fiber: 3 g
+    Vitamins:
+      Iron: 1.8 mg

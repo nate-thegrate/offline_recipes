@@ -1,0 +1,707 @@
+cornbread:
+  meal: side dish, bread
+  servings: 6
+  ingredients:
+    - 1/2 cup oil
+    - 1/2 teaspoon sucralose
+    - 1 1/2 cup water
+    - 1 teaspoon salt
+    - 1 cup whole wheat flour
+    - 1 cup yellow cornmeal
+    - 1/4 cup nutritional yeast
+    - 1/2 teaspoon guar gum
+    - 1 1/2 tablespoon baking powder
+  directions:
+    - Mix all ingredients and pour into glass pan.
+    - Bake at 400°F for 20-25 min.
+    - Serve hot, with honey or butter or whatever substitutes for those you wanna use.
+
+popcorn:
+  meal: side dish
+  servings: 3
+  ingredients:
+    - 1/2 cup popcorn
+    - 1/4 cup oil
+    - 1/2 teaspoon salt
+    - 1/2 teaspoon nutritional yeast
+  directions:
+    - Put the salt and yeast in a food processor to create a powder (it's easiest to make a lot at once and store it in a salt shaker).
+    - Add the popcorn and oil to your popcorn maker. Pop it, then pour into a bowl and season it with that powder.
+
+guacamole:
+  meal: side dish
+  calculate nutrition & price: false
+  ingredients:
+    - 3 avocados
+    - 1/8 cup lime juice
+    - 1 teaspoon salt
+    - 1 red onion
+    - 1/4 teaspoon cayenne pepper
+    - 1/4 teaspoon cumin
+    - 1/4 teaspoon garlic powder
+  directions:
+    - Remove the avocado peels & pits, then mash them and mix in the lime juice and salt.
+    - Add everything else and mix.
+    - Refrigerate for about an hour and serve.
+
+beans & rice:
+  meal: main dish
+  calculate nutrition & price: false
+  ingredients:
+    - 1 cup rice
+    - 1/2 teaspoon garlic
+    - 1 tablespoon onion powder
+    - 1/2 teaspoon cumin
+    - 1/2 teaspoon italian seasoning
+    - 1/4 teaspoon cayenne pepper
+    - 1 tablespoon oil
+    - 2 cups vegetable broth (or water + bullion or something)
+    - 8 oz beans (most cans are about 16 oz)
+  directions:
+    - Mix everything but the beans in with the rice and cook them together (having a rice maker or insta-pot is helpful).
+    - Mix in the beans and eat!
+
+fried rice:
+  meal: main dish
+  calculate nutrition & price: false
+  ingredients:
+    - 1 onion
+    - 14 oz tofu
+    - 3 tablespoons oil
+    - 1 teaspoon sesame oil
+    - 1/2 teaspoon garlic powder
+    - 1/4 teaspoon ginger
+    - salt & black pepper to taste
+    - 4 cups cooked rice
+    - 1 cup matchstick carrots
+    - 1 chopped bell pepper
+    - 1/2 cup peas
+    - 3 tablespoons soy sauce
+    - 1 green onion
+  directions:
+    - Dice the onion and slice the tofu into cubes. Add both to a skillet over medium-high heat, along with oil, sesame oil, garlic, ginger, salt, and pepper, and cook for about 4 minutes.
+    - Add in rice, carrots, pepper, peas, and soy sauce; sauté for 3-4 minutes.
+    - Top with sliced green onion and serve.
+
+tofu curry:
+  meal: main dish
+  calculate nutrition & price: false
+  ingredients:
+    - 28 oz extra firm tofu
+    - 1/8 cup oil
+    - 1 onion
+    - 1/2 teaspoon garlic powder
+    - 1/8 cup curry powder
+    - 1 tablespoon ginger
+    - 2 teaspoons coriander
+    - 1/4 teaspoon cayenne pepper
+    - 1/2 teaspoon black pepper
+    - 2 teaspoons salt
+    - 14 oz diced tomatoes
+    - 14 oz coconut milk
+    - 1/2 tablespoon lime juice
+    - 1 cup vegetable broth
+    - 1/8 teaspoon sucralose
+  directions:
+    - Slice the tofu into cubes and dice the onion, then place them in a skillet with the oil over medium-high heat.
+    - Add all the spices and cook until the tofu & onion start to brown.
+    - Then add everything else and simmer for 20 minutes.
+    - Serve with rice.
+
+pancakes:
+  meal: breakfast
+  servings: 3
+  ingredients:
+    - 1 cup water
+    - 1/2 teaspoon salt
+    - 1 tablespoon erythritol
+    - 1/8 cup oil
+    - 1/3 cup sourdough starter
+    - 1 cup whole wheat flour
+    - 2 teaspoons baking powder
+    - 1/8 teaspoon guar gum
+  directions:
+    - Mix everything in a bowl, and heat a griddle or pan to 375°F.
+    - Hopefully you know how to flip pancakes.
+
+waffles:
+  meal: breakfast
+  servings: 3
+  ingredients:
+    - 1 cup water
+    - 1/2 teaspoon salt
+    - 1/4 cup oil
+    - 2/3 cup sourdough starter
+    - 1/2 cup whole wheat flour
+    - 1/4 cup lupin flour
+    - 1/2 tablespoon baking powder
+    - 1/8 teaspoon guar gum
+  directions:
+    - Mix everything in a bowl and cook as per your waffle maker's instructions.
+
+aebleskivers:
+  meal: breakfast
+  servings: 3
+  ingredients:
+    - 1 1/2 cup water
+    - 1/2 teaspoon salt
+    - 1/3 cup sourdough starter
+    - 1 cup whole wheat flour
+    - 1 teaspoon baking powder
+    - 1/8 teaspoon guar gum
+    - 1/3 cup oil
+  directions:
+    - Combine all ingredients, **except for the oil.**
+    - Cook in an aebleskiver pan (add ~¼ teaspoon of oil to each divet before pouring the batter).
+
+crepes:
+  meal: breakfast
+  servings: 2
+  ingredients:
+    - 1 1/4 cup water
+    - 1/2 teaspoon salt
+    - 1/8 cup oil
+    - 1/3 cup sourdough starter
+    - 1/2 cup whole wheat flour
+    - 3 tablespoons wheat gluten
+    - 1/8 teaspoon guar gum
+  directions:
+    - probably just Google [how to cook crepes](https://www.google.com/search?q=how+to+cook+crepes)
+    - "Tip: don't cook both sides for the same amount of time: Cook for several minutes, then flip and cook the other side for about 30 seconds."
+
+french toast:
+  meal: breakfast
+  calculate nutrition & price: false
+  ingredients:
+    - 1 cup soy milk
+    - 1/2 tablespoon vanilla
+    - 1/4 teaspoon salt
+    - 1/8 cup oil
+    - 1/8 teaspoon sunflower lecithin
+    - 1 tablespoon soy protein
+    - 1/4 teaspoon cream of tartar
+    - sliced bread
+  directions:
+    - Mix ingredients together. (Vigorously. Ideally in a blender.)
+    - Dunk bread in mixture and then cook it like a pancake.
+    - Sprinkle cinnamon on the french toast right as it starts cooking for a nice boost to flavor & aesthetic.
+
+oatmeal:
+  meal: breakfast
+  servings: 2
+  ingredients:
+    - 1 cup oats
+    - 3 tablespoons chia seeds
+    - 1/8 teaspoon salt
+    - 1 cup soy milk
+    - 4 teaspoons Splenda
+    - cinnamon or fresh fruit (optional)
+  directions:
+    - Pour the oats, chia seeds, salt, sweetener, and milk into a cereal bowl, one at a time.
+    - Mix and then microwave for 2 minutes, or to your satisfaction. Let it cool a little bit and then add fruit if you want.
+
+german pancakes:
+  meal: breakfast
+  servings: 2
+  ingredients:
+    - 1 cup soy milk
+    - 1/2 teaspoon salt
+    - 1 tablespoon oil
+    - 1/3 cup sourdough starter
+    - 3/4 cup white flour
+    - 1/3 cup lupin flour
+    - 2 tablespoons wheat gluten
+    - 1/4 teaspoon guar gum
+  directions:
+    - Preheat oven to 450°F. Put butter in pan and stick in oven until it's melted.
+    - Mix other ingredients together and pour into pan. Bake for 20 minutes.
+
+lemon bars:
+  meal: dessert
+  calculate nutrition & price: false
+  ingredients:
+    - crust:
+        - 1/3 cup plant-based butter
+        - 1/3 cup allulose
+        - 1 cup whole wheat flour
+    - 1/2 teaspoon sucralose
+    - 1/8 cup lupin flour
+    - 2 teaspoons lemon zest
+    - 1/4 cup tablespoons lemon juice
+    - 1/2 teaspoon guar gum
+    - 1/8 teaspoon baking soda
+    - 1/8 teaspoon salt
+  directions:
+    - Combine the first 3 ingredients and press into an 8x8 pan; bake at 350°F for 15 min.
+    - Combine other ingredients and pour on top of crust; bake at 350°F for 20-25 min.
+
+oatmeal chocolate chip cookies:
+  meal: dessert
+  calculate nutrition & price: false
+  ingredients:
+    - 1 cup allulose
+    - 1/2 cup plant-based butter
+    - 1/8 cup coconut oil
+    - 1/4 cup water
+    - 1/2 teaspoon sucralose syrup
+    - 1/2 teaspoon molasses
+    - 1/2 teaspoon vanilla
+    - 1 1/4 cup oatmeal
+    - 1/2 teaspoon salt
+    - 1/2 cup white flour
+    - 1/2 cup whole wheat pastry flour
+    - 1/8 cup lupin flour
+    - 1/2 tablespoon baking powder
+    - 1/8 teaspoon guar gum
+    - chocolate chips
+  directions:
+    - Combine all ingredients and shape into small balls on a cookie sheet.
+    - Bake at 375°F for 6 minutes and let cool.
+
+red velvet cake:
+  meal: dessert
+  servings: 24
+  ingredients:
+    - 2 cups allulose
+    - 1 cup margarine
+    - 1/8 cup red food coloring
+    - 1 tablespoon vanilla
+    - 2 cups water
+    - 1/2 teaspoon salt
+    - 1/2 cup sourdough starter
+    - 1/2 cup oil
+    - 1/8 cup cocoa powder
+    - 2 cups whole wheat flour
+    - 1/2 tablespoon white vinegar
+    - 1 teaspoon baking soda
+    - 1/2 teaspoon guar gum
+    - icing:
+        - 16 oz plant-based cream cheese
+        - 1/2 tablespoon vanilla
+        - 1/4 teaspoon salt
+        - 1/8 teaspoon guar gum
+        - 3/4 cup coconut oil
+        - 5 cups erythritol powder
+  directions:
+    - Bake at 375°F for 30 minutes.
+
+ice cream:
+  meal: dessert
+  servings: 12
+  ingredients:
+    - 2 cups soy milk
+    - 2 cups oat milk
+    - 2/3 cup allulose
+    - 1/2 cup erythritol
+    - 1/2 teaspoon sucralose
+    - 1/4 teaspoon salt
+    - 14 oz plant-based sour cream
+    - 1/4 cup coconut oil
+    - 1/4 cup canola oil
+    - 1/8 cup glycerin
+    - 1 tablespoon vanilla
+    - 1/8 cup soy protein
+    - 1/2 teaspoon guar gum
+    - 1/2 teaspoon sunflower lecithin
+  directions:
+    - Warm the milk in the microwave for 1 minute, or until it's warm enough to melt the coconut oil.
+    - Combine all ingredients, mix (preferably in a blender), and freeze (preferably in an ice cream maker).
+
+chili skillet:
+  meal: main dish
+  calculate nutrition & price: false
+  ingredients:
+    - 16 oz plant-based ground beef
+    - 1 onion
+    - 1 green pepper
+    - 1 clove garlic
+    - 8 oz tomato sauce
+    - 15 oz kidney beans, undrained
+    - 1 tablespoon chili powder
+    - 2 teaspoons beef base
+    - 1 teaspoon oregano
+    - 1/2 cup uncooked rice
+    - 1 can corn, undrained
+    - 1/2 cup sliced olives
+    - plant-based cheese (optional)
+  directions:
+    - Brown beef with onion. (If you have an oily plant-based ground, drain excess grease afterward. If not, add 1/8 cup oil to pan.)
+    - Add all other ingredients except cheese and bring to a boil. Simmer for 15 min.
+    - Sprinkle cheese on top if you'd like, and serve with tortilla chips.
+
+rice pudding:
+  meal: breakfast, dessert
+  calculate nutrition & price: false
+  ingredients:
+    - 1 cup soy milk
+    - 1/4 teaspoon guar gum
+    - 2 cups cooked rice
+    - 1/4 teaspoon salt
+    - 2/3 teaspoon sucralose
+    - 1/2 tablespoon vanilla
+    - 1/8 teaspoon cinnamon
+  directions:
+    - Mix oat fiber & soy milk together with a whisk. Then add everything to a pot and simmer for 10 min (or until desired consistency is reached).
+
+smoothie:
+  meal: breakfast, drink
+  calculate nutrition & price: false
+  ingredients:
+    - frozen strawberries (and/or other fruit, but IMO strawberries have the best healthy/tasty combo)
+    - lemonade mix
+    - soy milk
+    - chia seeds
+  directions:
+    - Blend it up 😎
+
+hot cocoa:
+  meal: drink
+  servings: 2
+  ingredients:
+    - 2 cups soy milk
+    - 1/4 cup cocoa powder
+    - 1/2 teaspoon sunflower lecithin
+    - 1 teaspoon vanilla
+    - 1/4 teaspoon sucralose
+    - 1/8 teaspoon salt
+    - 1 tablespoon oil
+  directions:
+    - Microwave the soy milk for about 2 minutes, or until it reaches a good "hot cocoa" temperature.
+    - While it's heating, mix the cocoa and lecithin together so they'll combine with the liquid better.
+    - Then mix everything in and enjoy!
+
+sourdough bread:
+  meal: side dish, bread
+  calculate nutrition & price: false
+  ingredients:
+    - 300 g water
+    - 100 g sourdough starter
+    - 10 g salt
+    - 120 g white flour
+    - 240 g whole wheat flour
+    - 20 g rye flour
+    - 20 g wheat gluten
+  directions:
+    - Mix the water, starter, and salt in a bowl. Then mix in everything else.
+    - Cover and let rise for 18-24 hours.
+    - Grease a bread pan. Knead the risen dough for a bit (kinda like pulling taffy) and then set in the bread pan. Then let it rise for a couple more hours.
+    - Bake at 375°F for 50 minutes. Then take it out of the pan and let it cool for a few minutes.
+    - It might be worth it to buy an electric knife, since sourdough has a hard crust that's difficult to slice through.
+
+pb & j:
+  meal: bread, main dish
+  calculate nutrition & price: false
+  ingredients:
+    - bread
+    - peanut butter
+    - jam
+  directions:
+    - Adding this as a recipe since I keep forgetting that I can just make a PB&J when I'm hungry.
+
+vegan deli sandwich:
+  meal: bread, main dish
+  calculate nutrition & price: false
+  ingredients:
+    - bread
+    - tofurkey
+    - plant-based cheese
+    - lettuce
+    - tomato
+    - onion
+    - Vegenaise
+    - Mustard
+    - Salt & Pepper
+  directions:
+    - They made plant-based versions of sliced turkey, cheese, & mayo. You can literally just buy that stuff and then make a regular sandwich.
+
+sourdough sopapillas:
+  meal: breakfast, dessert, bread
+  calculate nutrition & price: false
+  ingredients:
+    - 300 g water
+    - 100 g sourdough starter
+    - 10 g salt
+    - 360 g whole wheat flour
+    - 20 g rye flour
+    - 20 g wheat gluten
+    - oil for deep-frying
+  directions:
+    - Mix the water, starter, and salt in a bowl. Then mix in everything else (except the oil; it's the same recipe as sourdough bread, but it's 100% whole wheat).
+    - Cover and let rise for 18-24 hours.
+    - Using a rolling pin, spread the dough out into a large rectangle, and then cut it into squares with a pizza cutter.
+    - Heat the oil in a frying pan over medium-high heat, and then fry each sourdough square, flipping halfway through.
+    - Serve with honey, cinnamon-sugar, nutella, icing, jam, or even something savory if you'd like!
+
+strawberry lime jam:
+  meal: bread
+  calculate nutrition & price: false
+  ingredients:
+    - strawberries
+    - lime juice
+    - sucralose
+    - chia seeds
+  directions:
+    - Heat the strawberries & lime juice in a pot, using a potato masher to smash the strawberries into jam.
+    - Stir it as it simmers for a few minutes, then mix in the sucralose and chia seeds and let it cool.
+    - (Amounts aren't listed since it depends on personal preference, and there's usually no consistency in the amount of strawberries I'm working with.)
+
+raspberry jam:
+  meal: bread
+  calculate nutrition & price: false
+  ingredients:
+    - raspberries
+    - sucralose
+    - guar gum
+  directions:
+    - Heat the raspberries in a pot, using a potato masher to smash them into jam.
+    - Stir it as it simmers for a few minutes, then mix in the sucralose & guar gum and let it cool.
+    - (Amounts aren't listed since it depends on personal preference, and there's usually no consistency in the amount of strawberries I'm working with.)
+
+sweet potato:
+  meal: main dish
+  calculate nutrition & price: false
+  ingredients:
+    - 1 sweet potato
+  directions:
+    - Use a fork to puncture the potato skin a bunch.
+    - Bake at 425°F for 70 minutes. It's probably a good idea to put tin foil or parchment paper underneath to reduce cleanup hassle.
+    - Put whatever you'd like on top. (I like cinnamon since it reminds me of Thanksgiving)
+
+chili:
+  meal: main dish, soup
+  calculate nutrition & price: false
+  ingredients:
+    - 4 cups dry beans
+    - 4 cans diced tomatoes
+    - 4 cans tomato sauce
+    - 24 oz plant-based ground beef
+    - 1 green pepper
+    - 1 onion
+    - 2 teaspoons minced garlic
+    - 2 tablespoons chili powder
+    - 1 teaspoon pepper
+    - 2 teaspoons cumin
+    - 2 teaspoons basil
+    - 3 tablespoons beef base
+  directions:
+    - Combine everything in a Crock Pot or insta-pot. Cook for who knows how long.
+
+winter vegetable soup:
+  meal: main dish, soup
+  calculate nutrition & price: false
+  ingredients:
+    - 16 oz plant-based ground beef
+    - 1 onion
+    - 15 oz stewed tomatoes
+    - 2 8-oz cans tomato sauce
+    - 1 tablespoon beef base
+    - 1 can corn, undrained
+    - 1 can green beans, undrained
+    - 1 can red kidney beans, undrained
+    - 1 can white kidney beans, undrained
+    - 1 teaspoon garlic
+    - 1/4 teaspoon pepper
+    - 1 teaspoon basil
+    - 1 bay leaf
+  directions:
+    - Brown sausage with onion.
+    - Then add all other ingredients and bring to a boil. Simmer for 30 min.
+
+kale sausage soup:
+  meal: main dish, soup
+  calculate nutrition & price: false
+  ingredients:
+    - 14 oz plant-based sausage
+    - 1 onion
+    - 6 cups vegetable broth
+    - 8 oz kale
+    - 32 oz other veggies (cauliflower, potatoes, carrots)
+    - 1 teaspoon basil
+    - 1/2 teaspoon oregano
+    - 1 teaspoon garlic powder
+    - 1 teaspoon salt
+    - 1/2 teaspoon pepper
+  directions:
+    - Brown sausage with onion.
+    - Then add all other ingredients and bring to a boil. Simmer for 30 min.
+
+bean & spinach soup:
+  meal: main dish, soup
+  calculate nutrition & price: false
+  ingredients:
+    - 1/8 cup oil
+    - 1 onion, chopped
+    - 1 stalk celery, chopped
+    - 2 carrots, cut into matchsticks
+    - 1/4 teaspoon garlic powder
+    - 15 oz white beans, undrained
+    - 4 cups chicken broth
+    - 1/2 teaspoon black pepper
+    - 3 tablespoons parsley
+    - 1 teaspoon thyme
+    - 1 bay leaf
+    - 8 oz spinach (trim off tough stems)
+    - 1 tablespoon lemon juice
+  directions:
+    - Heat oil in a saucepan over medium heat. Add celery & onion and cook for about 5 minutes.
+    - Combine everything but the spinach & lemon juice and simmer for about 30 minutes, then remove the bay leaf.
+    - "Optional: puree a few spoonfuls of the soup in a blender, and then add it back into the pot."
+    - Stir in spinach and cook for another minute, then remove from heat and stir in lemon juice.
+
+italian sausage soup:
+  meal: main dish, soup
+  calculate nutrition & price: false
+  ingredients:
+    - 14 oz plant-based sausage
+    - 1 teaspoon Italian seasoning
+    - 15 oz white beans, undrained
+    - 15 oz black beans, undrained
+    - 15 oz diced tomatoes
+    - 2 cups water
+    - 1 tablespoon beef base
+    - 8 oz pasta
+  directions:
+    - Brown the sausage, then add all other ingredients.
+    - Simmer for 15 minutes or until the pasta is cooked.
+
+spaghetti:
+  meal: main dish
+  calculate nutrition & price: false
+  ingredients:
+    - Spaghetti noodles
+    - Spaghetti sauce
+    - Plant-based sausage (optional)
+  directions:
+    - Hopefully you know how to cook spaghetti.
+
+bagels:
+  meal: breakfast, bread
+  servings: 8
+  ingredients:
+    - 1 cup water
+    - 1/8 cup oil
+    - 1/2 cup sourdough starter
+    - 1 teaspoon salt
+    - 2 cups whole wheat flour
+    - 1/2 tablespoon yeast
+    - 1/8 cup wheat gluten
+    - 7 oz plant-based sour cream
+  directions:
+    - Combine all ingredients and mix, either in a bread machine or by hand, and let rise for about 90 minutes.
+    - Cut dough into 8 pieces and roll into balls, making a hole in each ball. (Feel free to look up a video before you do it the first time.)
+    - Set the oven to 350°F for 3 min to warm it up a bit, and then turn the oven off. Let the bagels rise in the oven for about 10 minutes.
+    - Fill a large pot with water and bring to a boil.
+    - Remove bagels from oven, and preheat oven to 425°F.
+    - Boil each bagel for 3 minutes, flipping halfway through (so 90 seconds for each side).
+    - Once all bagels are boiled, return them to the baking sheet, and bake at 425°F for 20 minutes.
+    - Let the bagels cool and serve however you like (e.g. by spreading plant-based sour cream or cream cheese on top).
+
+pizza:
+  meal: main dish, bread
+  servings: 3
+  ingredients:
+    - 1 cup water
+    - 1/8 cup oil
+    - 1/2 cup sourdough starter
+    - 1 teaspoon salt
+    - 2 cups whole wheat flour
+    - 1/2 tablespoon yeast
+    - 1/8 cup wheat gluten
+    - toppings:
+        - 1/8 cup pizza sauce
+        - 7 oz plant-based mozzarella
+        - plant-based sausage, bell peppers, jalapeños, diced red onion, etc.
+  directions:
+    - Combine all ingredients and mix, either in a bread machine or by hand, and let rise for about 90 minutes.
+    - Roll out dough into 2 pizzas (or use half of it for breadsticks).
+    - For breadsticks, roll dough into breadstick shapes, then dip in olive oil and sprinkle garlic, nutritional yeast, and salt on top.
+    - Top with sauce, cheese, and whatever else you want.
+    - Bake at 425°F for 12-15 minutes.
+
+dinner rolls:
+  meal: side dish, bread
+  servings: 10
+  ingredients:
+    - 2 cups water
+    - 1/4 cup potato flakes
+    - 1/4 cup oil
+    - 1/2 cup sourdough starter
+    - 2 teaspoons salt
+    - 4 cups whole wheat flour
+    - 1/4 cup rye flour
+    - 1 tablespoon yeast
+    - 1/8 cup wheat gluten
+  directions:
+    - Combine all ingredients and mix, either in a bread machine or by hand, and let rise for about 90 minutes.
+    - Cut dough into 24 rolls. Roll them up and stick them on a pan in the oven.
+    - Set the oven to 350°F for 3 min to warm it up a bit, and then turn the oven off.
+    - Let the rolls rise for 30-45 min. Then set oven to 350°F and bake for 20 min.
+
+roasted potatoes:
+  meal: side dish
+  calculate nutrition & price: false
+  ingredients:
+    - 8 potatoes
+    - 1/4 cup oil
+    - 1 teaspoon salt
+    - 1 teaspoon garlic
+    - 1/2 teaspoon onion powder
+    - 1 teaspoon rosemary
+  directions:
+    - Wash & cube the potatoes.
+    - Mix everything else in a bowl, then pour mixture onto potatoes.
+    - Bake at 425°F for 20 min or until potatoes reach optimal crispiness.
+
+no-bake cookies:
+  meal: dessert
+  servings: 24
+  ingredients:
+    - 1/2 cup coconut oil
+    - 2/3 cup erythritol
+    - 1/2 cup soy milk
+    - 1/4 teaspoon salt
+    - 1/4 cup cocoa powder
+    - 1 1/2 teaspoon sucralose
+    - 1 cup peanut butter
+    - 1 tablespoon vanilla
+    - 3 cups oats
+  directions:
+    - Bring butter, erythritol, milk, salt, and cocoa to a boil; boil for 90 seconds.
+    - Let it cool for a minute and then stir in the peanut butter, sucralose, and vanilla.
+    - Then stir in the oats.
+    - Separate into individual cookie balls and let them cool on a cookie sheet for about 30 minutes.
+
+cinnamon rolls:
+  meal: breakfast, dessert, bread
+  servings: 24
+  ingredients:
+    - 2 cups water
+    - 1/4 cup potato flakes
+    - 1/4 cup oil
+    - 1/2 cup sourdough starter
+    - 2 teaspoons salt
+    - 4 cups whole wheat flour
+    - 1 tablespoon yeast
+    - 1/8 cup wheat gluten
+    - cinnamon spread:
+        - 1/2 cup plant-based butter
+        - 1/2 teaspoon sucralose
+        - 1/4 cup cinnamon
+    - icing:
+        - 8 oz plant-based cream cheese
+        - 2 tablespoons plant-based butter
+        - 1 teaspoon vanilla
+        - 1/2 teaspoon sucralose
+        - 1/2 cup Fibersol (optional)
+        - 2 cups allulose
+        - 1/2 cup erythritol
+        - 1/8 teaspoon salt
+  directions:
+    - Set out the butter and cream cheese so they have time to reach room temperature.
+    - Combine all ingredients (except for the cinnamon spread) and mix, either in a bread machine or by hand, and let rise for about an hour.
+    - Using a rolling pin, spread the dough out into a large rectangle. Mix the cinnamon spread ingredients and spread on top.
+    - Roll the dough up and use dental floss to cut it into individual rolls (about 1 in thick).
+    - Put the rolls in a pan and set the pan in the oven. Set the oven to 350°F for 3 min to warm it up a bit, and then turn the oven off.
+    - Let the cinnamon rolls rise for 30-45 min. Then set oven to 350°F and bake for 20 min.
+    - <br>For the icing, if the allulose/erythritol/salt aren't in powder form, stick them in the blender until they are.
+    - Then combine the icing ingredients using an electric mixer and spread it on the cinnamon rolls (once they've had a few minutes to cool).
