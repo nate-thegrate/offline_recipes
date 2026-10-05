@@ -6,10 +6,18 @@ import 'quantity.dart';
 
 const _microgram = '\u00B5g';
 
+const _ignoredIngredients = <String>{
+  'water',
+  'red food coloring',
+  'plant-based sausage, bell peppers, jalapeños, diced red onion, etc.',
+};
+
 const _ingredientAliases = <String, String>{
-  'nutritional yeast': 'fortified premium yeast flakes',
-  'oatmeal': 'oats',
   'erythritol powder': 'erythritol',
+  'sweetener': 'sucralose',
+  'nutritional yeast': 'fortified premium yeast flakes',
+  'oil': 'canola oil',
+  'sourdough starter': 'whole wheat flour',
 };
 
 class MeasuredMass {
@@ -44,18 +52,27 @@ class Ingredient implements Food {
   @override
   final Price totalPrice;
   @override
-  final Nutrients servingNutrition;
+  final NutritionFacts servingNutrition;
 
   @override
   Price get servingPrice => totalPrice / servings;
 
   @override
-  Nutrients get totalNutrition => servingNutrition * servings;
+  NutritionFacts get totalNutrition => servingNutrition * servings;
 
   IngredientAmount? used(Quantity quantity) {
-    final ratio = quantity.ratioTo(servingSize);
-    if (ratio == null || ratio.isNaN || ratio.isInfinite) return null;
-    return IngredientAmount(this, quantity, ratio);
+    final ratio = _servingsIn(quantity);
+    if (ratio != null && ratio.isFinite) return IngredientAmount(this, quantity, ratio);
+    return null;
+  }
+
+  // Mass and volume agree while a serving has no measurement of its own.
+  double? _servingsIn(Quantity quantity) {
+    final alongMass = quantity.unit.measuresMass;
+    final serving = alongMass ? servingSize.grams : servingSize.milliliters;
+    if (serving == 0) return null;
+    final amount = alongMass ? quantity.grams : quantity.milliliters;
+    return amount / serving;
   }
 }
 
@@ -78,19 +95,20 @@ class IngredientAmount implements Food {
   Price get totalPrice => servingPrice * servings;
 
   @override
-  Nutrients get servingNutrition => ingredient.servingNutrition;
+  NutritionFacts get servingNutrition => ingredient.servingNutrition;
 
   @override
-  Nutrients get totalNutrition => servingNutrition * servings;
+  NutritionFacts get totalNutrition => servingNutrition * servings;
 }
 
 class RecipeLine {
-  const new(this.text, {this.food, this.group, this.optional = false});
+  const new(this.text, {this.food, this.group, this.optional = false, this.ignored = false});
 
   final String text;
   final IngredientAmount? food;
   final String? group;
   final bool optional;
+  final bool ignored;
 }
 
 class Recipe implements Food {
@@ -118,7 +136,7 @@ class Recipe implements Food {
     if (!calculatesNutrition) return false;
     var anyRequired = false;
     for (final line in lines) {
-      if (line.optional) continue;
+      if (line.optional || line.ignored) continue;
       anyRequired = true;
       if (line.food == null) return false;
     }
@@ -132,33 +150,29 @@ class Recipe implements Food {
   Price get servingPrice => totalPrice / servings;
 
   @override
-  Nutrients get totalNutrition => isPriced ? _sumNutrition() : const Nutrients();
+  NutritionFacts get totalNutrition => isPriced ? _sumNutrition() : .none;
 
   @override
-  Nutrients get servingNutrition => totalNutrition / servings;
+  NutritionFacts get servingNutrition => totalNutrition / servings;
 
   Price _sumPrices() {
     var dollars = 0.0;
-    for (final food in _requiredFoods()) {
-      dollars += food.totalPrice.dollars;
+    for (final line in lines) {
+      if (line case RecipeLine(optional: false, ignored: false, :final food?)) {
+        dollars += food.totalPrice.dollars;
+      }
     }
     return Price(dollars);
   }
 
-  Nutrients _sumNutrition() {
-    var sum = const Nutrients();
-    for (final food in _requiredFoods()) {
-      sum += food.totalNutrition;
+  NutritionFacts _sumNutrition() {
+    NutritionFacts sum = .none;
+    for (final line in lines) {
+      if (line case RecipeLine(optional: false, ignored: false, :final food?)) {
+        sum += food.totalNutrition;
+      }
     }
     return sum;
-  }
-
-  Iterable<IngredientAmount> _requiredFoods() sync* {
-    for (final line in lines) {
-      if (line.optional) continue;
-      final food = line.food;
-      if (food != null) yield food;
-    }
   }
 }
 
@@ -330,6 +344,8 @@ List<RecipeLine> _lines(Object? value, Map<String, Ingredient> ingredients, Stri
 
 RecipeLine _line(String text, Map<String, Ingredient> ingredients, {String? group}) {
   final parsed = tryParseAmount(text);
+  final name = parsed == null || parsed.name.isEmpty ? text : parsed.name;
+  final ignored = _ignoredIngredients.contains(_normalize(name));
   IngredientAmount? food;
   if (parsed != null && parsed.name.isNotEmpty) {
     food = ingredients[_canonicalName(parsed.name)]?.used(parsed.quantity);
@@ -339,19 +355,22 @@ RecipeLine _line(String text, Map<String, Ingredient> ingredients, {String? grou
     food: food,
     group: group,
     optional: text.toLowerCase().contains('(optional)'),
+    ignored: ignored,
   );
 }
 
-String _canonicalName(String name) {
+String _normalize(String name) {
   var key = name.toLowerCase();
   final parenthesis = key.indexOf('(');
   if (parenthesis != -1) key = key.substring(0, parenthesis);
   key = key.replaceAll(RegExp(r'\s+'), ' ').trim();
   if (key.endsWith(',')) key = key.substring(0, key.length - 1).trim();
-  return _ingredientAliases[key] ?? key;
+  return key;
 }
 
-Nutrients _parseNutrition(YamlMap document) {
+String _canonicalName(String name) => _ingredientAliases[_normalize(name)] ?? _normalize(name);
+
+NutritionFacts _parseNutrition(YamlMap document) {
   var calories = 0.0;
   final grams = <String, double>{};
   void add(String key, Object? value) {
@@ -386,7 +405,7 @@ Nutrients _parseNutrition(YamlMap document) {
     }
     add(key, document[key] as Object?);
   }
-  return Nutrients(calories: calories, grams: grams);
+  return NutritionFacts(calories: calories, grams: grams);
 }
 
 ({double value, String? unit}) _measurement(Object? value, String label) {

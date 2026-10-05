@@ -6,34 +6,9 @@ class Quantity {
   final double amount;
   final Unit unit;
 
-  double? get grams {
-    final unitGrams = unit.inGrams;
-    if (unitGrams == null) return null;
-    return amount * unitGrams;
-  }
+  double get grams => amount * unit.inGrams;
 
-  double? get milliliters {
-    final unitMilliliters = unit.inMilliliters;
-    if (unitMilliliters == null) return null;
-    return amount * unitMilliliters;
-  }
-
-  /// How many [serving]s this amount is, or null when the units measure different things.
-  double? ratioTo(Quantity serving) {
-    final measured = grams;
-    final servingMeasured = serving.grams;
-    if (measured != null && servingMeasured != null) {
-      if (servingMeasured == 0) return null;
-      return measured / servingMeasured;
-    }
-    final volume = milliliters;
-    final servingVolume = serving.milliliters;
-    if (volume != null && servingVolume != null) {
-      if (servingVolume == 0) return null;
-      return volume / servingVolume;
-    }
-    return null;
-  }
+  double get milliliters => amount * unit.inMilliliters;
 }
 
 class ParsedAmount {

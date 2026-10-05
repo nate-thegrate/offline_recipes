@@ -27,7 +27,7 @@ void main() {
 
     expect(spoons.totalPrice.dollars, cup.totalPrice.dollars);
     expect(spoons.totalNutrition.calories, cup.totalNutrition.calories);
-    expect(flour.used(Quantity(100.0, Unit.g)), isNull);
+    expect(flour.used(Quantity(100.0, Unit.g))!.servings, 100 / Unit.cup.inGrams);
   });
 
   test('a mixed tablespoon amount scales from the pantry serving', () {
@@ -36,12 +36,10 @@ void main() {
     final line = cornbread.lines.firstWhere(
       (item) => item.text == '1 1/2 tablespoon baking powder',
     );
-    final expected = (1.5 * Unit.tbsp.inMilliliters!) / powder.servingSize.milliliters!;
+    final expected = (1.5 * Unit.tbsp.inMilliliters) / powder.servingSize.milliliters;
 
     expect(line.food!.servings, expected);
     expect(line.food!.totalPrice.dollars, powder.servingPrice.dollars * expected);
-    expect(cornbread.isPriced, isFalse);
-    expect(cornbread.totalPrice.dollars, 0);
   });
 
   test('recipe names that differ from the pantry still measure the same food', () {
@@ -49,17 +47,15 @@ void main() {
     final yeastLine = recipes['popcorn'].lines.firstWhere(
       (item) => item.text == '1/2 teaspoon nutritional yeast',
     );
-    final yeastServings = (0.5 * Unit.tsp.inMilliliters!) / yeast.servingSize.milliliters!;
+    final yeastServings = (0.5 * Unit.tsp.inMilliliters) / yeast.servingSize.milliliters;
     expect(yeastLine.food!.name, yeast.name);
     expect(yeastLine.food!.servings, yeastServings);
 
-    final oats = ingredients['oats'];
-    final oatmeal = recipes['oatmeal chocolate chip cookies'].lines.firstWhere(
-      (item) => item.text == '1 1/4 cup oatmeal',
-    );
-    final oatServings = (1.25 * Unit.cup.inMilliliters!) / oats.servingSize.milliliters!;
-    expect(oatmeal.food!.name, oats.name);
-    expect(oatmeal.food!.servings, oatServings);
+    final oil = ingredients['canola oil'];
+    final oilLine = recipes['cornbread'].lines.firstWhere((item) => item.text == '1/2 cup oil');
+    final oilServings = (0.5 * Unit.cup.inMilliliters) / oil.servingSize.milliliters;
+    expect(oilLine.food!.name, oil.name);
+    expect(oilLine.food!.servings, oilServings);
 
     final erythritol = ingredients['erythritol'];
     final icing = recipes['red velvet cake'].lines.firstWhere(
@@ -69,21 +65,21 @@ void main() {
     expect(icing.food!.name, erythritol.name);
   });
 
-  test('weight and volume do not convert without a density', () {
+  test('ounces of cream cheese scale from its tablespoon serving', () {
     final creamCheese = ingredients['plant-based cream cheese'];
     final line = recipes['red velvet cake'].lines.firstWhere(
       (item) => item.text == '16 oz plant-based cream cheese',
     );
+    final ounces = Quantity(16.0, Unit.oz);
 
-    expect(creamCheese.servingSize.milliliters, isNotNull);
-    expect(line.food, isNull);
-    expect(creamCheese.used(Quantity(16.0, Unit.oz)), isNull);
+    expect(line.food!.servings, ounces.grams / creamCheese.servingSize.grams);
+    expect(creamCheese.used(creamCheese.servingSize)!.servings, 1);
   });
 
   test('soy milk in ice cream is two cups of the pantry serving', () {
     final soy = ingredients['soy milk'];
     final line = recipes['ice cream'].lines.firstWhere((item) => item.text == '2 cups soy milk');
-    final expected = (2 * Unit.cup.inMilliliters!) / soy.servingSize.milliliters!;
+    final expected = (2 * Unit.cup.inMilliliters) / soy.servingSize.milliliters;
 
     expect(line.food!.servings, expected);
     expect(line.food!.totalPrice.dollars, soy.servingPrice.dollars * expected);
@@ -101,7 +97,7 @@ void main() {
       var dollars = 0.0;
       var calories = 0.0;
       for (final line in recipe.lines) {
-        if (line.optional) continue;
+        if (line.optional || line.ignored) continue;
         expect(line.food, isNotNull, reason: '${recipe.name}: ${line.text}');
         dollars += line.food!.totalPrice.dollars;
         calories += line.food!.totalNutrition.calories;
@@ -121,13 +117,52 @@ void main() {
     }
   });
 
+  test('ignored ingredients are omitted from price and nutrition', () {
+    final water = recipes['cornbread'].lines.firstWhere((line) => line.text == '1 1/2 cup water');
+    final coloring = recipes['red velvet cake'].lines.firstWhere(
+      (line) => line.text == '1/8 cup red food coloring',
+    );
+    final toppings = recipes['pizza'].lines.firstWhere(
+      (line) => line.text == 'plant-based sausage, bell peppers, jalapeños, diced red onion, etc.',
+    );
+    expect(water.ignored, isTrue);
+    expect(coloring.ignored, isTrue);
+    expect(toppings.ignored, isTrue);
+
+    final ingredient = Ingredient(
+      name: 'test flour',
+      servingSize: Quantity(1.0, Unit.cup),
+      servings: 10.0,
+      totalPrice: const Price(10.0),
+      servingNutrition: const NutritionFacts(calories: 100.0, grams: {'Total Fat': 1.0}),
+    );
+    final used = ingredient.used(Quantity(1.0, Unit.cup))!;
+    final recipe = Recipe(
+      name: 'test',
+      meals: const ['side dish'],
+      servings: 1.0,
+      servingsSpecified: true,
+      calculatesNutrition: true,
+      lines: [
+        RecipeLine('1 cup test flour', food: used),
+        RecipeLine('1 cup water', food: used, ignored: true),
+      ],
+      directions: const ['Mix.'],
+    );
+
+    expect(recipe.isPriced, isTrue);
+    expect(recipe.totalPrice.dollars, ingredient.servingPrice.dollars);
+    expect(recipe.totalNutrition.calories, 100);
+    expect(recipe.totalNutrition.grams['Total Fat'], 1);
+  });
+
   test('optional lines and disabled recipes do not invent a total', () {
     final ingredient = Ingredient(
       name: 'test flour',
       servingSize: Quantity(1.0, Unit.cup),
       servings: 10.0,
       totalPrice: const Price(10.0),
-      servingNutrition: const Nutrients(calories: 100.0, grams: {'Total Fat': 1.0}),
+      servingNutrition: const NutritionFacts(calories: 100.0, grams: {'Total Fat': 1.0}),
     );
     final used = ingredient.used(Quantity(1.0, Unit.cup))!;
     final recipe = Recipe(

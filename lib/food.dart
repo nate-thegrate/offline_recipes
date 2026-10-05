@@ -18,20 +18,17 @@ class const Price(final double dollars) {
   String toString() => '\$${dollars.toStringAsFixed(2)}';
 }
 
-abstract class NutritionFacts {
-  double get calories;
-}
+class NutritionFacts {
+  const new({required this.calories, required this.grams});
 
-class Nutrients implements NutritionFacts {
-  const new({this.calories = 0.0, this.grams = const <String, double>{}});
-
-  @override
   final double calories;
 
   /// Mass nutrients in grams, keyed by the names used in the catalog files.
   final Map<String, double> grams;
 
-  Nutrients operator +(Nutrients other) {
+  static const none = NutritionFacts(calories: 0, grams: {});
+
+  NutritionFacts operator +(NutritionFacts other) {
     final combined = <String, double>{};
     for (final MapEntry(:key, :value) in grams.entries) {
       combined[key] = value;
@@ -39,21 +36,24 @@ class Nutrients implements NutritionFacts {
     for (final MapEntry(:key, :value) in other.grams.entries) {
       combined[key] = (combined[key] ?? 0) + value;
     }
-    return Nutrients(calories: calories + other.calories, grams: combined);
+    return NutritionFacts(calories: calories + other.calories, grams: combined);
   }
 
-  Nutrients operator *(double factor) => Nutrients(
+  NutritionFacts operator *(double factor) => NutritionFacts(
     calories: calories * factor,
     grams: {for (final MapEntry(:key, :value) in grams.entries) key: value * factor},
   );
 
-  Nutrients operator /(double divisor) => this * (1 / divisor);
+  NutritionFacts operator /(double divisor) => this * (1 / divisor);
 }
 
 class Tag {
   const new(this.short, {String? full}) : full = full ?? short;
   final String short;
   final String full;
+
+  @override
+  String toString() => full;
 }
 
 class UnitName extends Tag {
@@ -74,24 +74,27 @@ sealed class Unit {
 
   final UnitName name;
 
-  double? get inGrams;
-  double? get inMilliliters;
+  double get inGrams;
+  double get inMilliliters;
 
-  static const BaseUnit g = BaseUnit(
+  /// True when this unit is defined by weight. The other measure is water at 1 g/ml.
+  bool get measuresMass;
+
+  static const g = BaseUnit(
     UnitName('g', full: 'gram', fullPlural: 'grams'), //
     inGrams: 1.0,
   );
-  static const Unit mg = Unit(
+  static const mg = Unit(
     UnitName('mg', full: 'milligram', fullPlural: 'milligrams'),
     baseUnit: g,
     unitsPerBaseUnit: 1000.0,
   );
 
-  static const BaseUnit lb = BaseUnit(
+  static const lb = BaseUnit(
     UnitName('lb', full: 'pound', fullPlural: 'pounds'),
     inGrams: 453.59237,
   );
-  static const Unit oz = Unit(
+  static const oz = Unit(
     UnitName('oz', full: 'ounce', fullPlural: 'ounces'),
     baseUnit: lb,
     unitsPerBaseUnit: 16.0,
@@ -106,21 +109,21 @@ sealed class Unit {
     inMilliliters: 1.0,
   );
 
-  static const BaseUnit cup = BaseUnit(
+  static const cup = BaseUnit(
     UnitName('cup', plural: 'cups', superShort: 'c'),
     inMilliliters: 240.0,
   );
-  static const Unit tbsp = Unit(
+  static const tbsp = Unit(
     UnitName('tbsp', full: 'tablespoon', fullPlural: 'tablespoons', superShort: 'T'),
     baseUnit: cup,
     unitsPerBaseUnit: 16.0,
   );
-  static const Unit tsp = Unit(
+  static const tsp = Unit(
     UnitName('tsp', full: 'teaspoon', fullPlural: 'teaspoons', superShort: 't'),
     baseUnit: tbsp,
     unitsPerBaseUnit: 3.0,
   );
-  static const Unit flOz = Unit(
+  static const flOz = Unit(
     UnitName('fl. oz', full: 'fluid ounce', fullPlural: 'fluid ounces', superShort: 'oz'),
     baseUnit: cup,
     unitsPerBaseUnit: 8.0,
@@ -135,26 +138,29 @@ class _Unit extends Unit {
   final double unitsPerBaseUnit;
 
   @override
-  double? get inGrams => switch (baseUnit.inGrams) {
-    final double baseGrams => baseGrams / unitsPerBaseUnit,
-    null => null,
-  };
+  double get inGrams => baseUnit.inGrams / unitsPerBaseUnit;
 
   @override
-  double? get inMilliliters => switch (baseUnit.inMilliliters) {
-    final double baseMilliliters => baseMilliliters / unitsPerBaseUnit,
-    null => null,
-  };
+  double get inMilliliters => baseUnit.inMilliliters / unitsPerBaseUnit;
+
+  @override
+  bool get measuresMass => baseUnit.measuresMass;
 }
 
 class BaseUnit extends Unit {
-  const new(super.name, {this.inGrams, this.inMilliliters})
+  const new(super.name, {double? inGrams, double? inMilliliters})
     : assert((inGrams == null) != (inMilliliters == null)),
+      measuresMass = inGrams != null,
+      inGrams = inGrams ?? inMilliliters ?? 0,
+      inMilliliters = inMilliliters ?? inGrams ?? 0,
       super._();
 
   @override
-  final double? inGrams;
+  final bool measuresMass;
 
   @override
-  final double? inMilliliters;
+  final double inGrams;
+
+  @override
+  final double inMilliliters;
 }

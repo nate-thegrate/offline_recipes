@@ -57,8 +57,8 @@ void main() {
 
     await tester.pageBack();
     await tester.pumpAndSettle();
-    await openRecipe(tester, 'cornbread');
-    expect(find.text('1 cup whole wheat flour', skipOffstage: false), findsOneWidget);
+    await openRecipe(tester, 'guacamole');
+    expect(find.text('3 avocados', skipOffstage: false), findsOneWidget);
     expect(
       find.descendant(
         of: find.byKey(const ValueKey('recipe-detail')),
@@ -74,12 +74,30 @@ void main() {
     await tester.pumpAndSettle();
 
     await openRecipe(tester, 'aebleskivers');
+    final detailScroll = find.descendant(
+      of: find.byKey(const ValueKey('recipe-detail')),
+      matching: find.byType(Scrollable),
+    );
+    await tester.scrollUntilVisible(
+      find.textContaining('except for the oil'),
+      300,
+      scrollable: detailScroll,
+    );
     expect(find.textContaining('except for the oil'), findsOneWidget);
     expect(find.textContaining('**'), findsNothing);
 
     await tester.pageBack();
     await tester.pumpAndSettle();
     await openRecipe(tester, 'crepes');
+    final crepeScroll = find.descendant(
+      of: find.byKey(const ValueKey('recipe-detail')),
+      matching: find.byType(Scrollable),
+    );
+    await tester.scrollUntilVisible(
+      find.textContaining('how to cook crepes'),
+      300,
+      scrollable: crepeScroll,
+    );
     expect(find.textContaining('how to cook crepes'), findsOneWidget);
     expect(find.textContaining('google.com'), findsNothing);
   });
@@ -113,6 +131,14 @@ void main() {
     await openRecipe(tester, 'red velvet cake');
 
     expect(find.byKey(const ValueKey('recipe-list')), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('Icing'),
+      300,
+      scrollable: find.descendant(
+        of: find.byKey(const ValueKey('recipe-detail')),
+        matching: find.byType(Scrollable),
+      ),
+    );
     expect(find.text('Icing'), findsOneWidget);
     expect(find.text('16 oz plant-based cream cheese'), findsOneWidget);
     expect(find.byTooltip('Back'), findsNothing);

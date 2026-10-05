@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:marionette_flutter/marionette_flutter.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:signal_widgets/signal_widgets.dart';
 
 import 'catalog.dart';
 import 'catalog_view.dart';
@@ -11,6 +12,8 @@ void main() async {
   } else {
     WidgetsFlutterBinding.ensureInitialized();
   }
+
+  SignalsObserver.instance = null;
   await loadCatalog();
   runApp(const MainApp());
 }
