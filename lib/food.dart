@@ -8,12 +8,46 @@ abstract interface class Food {
 }
 
 class const Price(final double dollars) {
+  Price operator +(Price other) => Price(dollars + other.dollars);
+
+  Price operator *(double factor) => Price(dollars * factor);
+
+  Price operator /(double divisor) => Price(dollars / divisor);
+
   @override
   String toString() => '\$${dollars.toStringAsFixed(2)}';
 }
 
 abstract class NutritionFacts {
   double get calories;
+}
+
+class Nutrients implements NutritionFacts {
+  const new({this.calories = 0.0, this.grams = const <String, double>{}});
+
+  @override
+  final double calories;
+
+  /// Mass nutrients in grams, keyed by the names used in the catalog files.
+  final Map<String, double> grams;
+
+  Nutrients operator +(Nutrients other) {
+    final combined = <String, double>{};
+    for (final MapEntry(:key, :value) in grams.entries) {
+      combined[key] = value;
+    }
+    for (final MapEntry(:key, :value) in other.grams.entries) {
+      combined[key] = (combined[key] ?? 0) + value;
+    }
+    return Nutrients(calories: calories + other.calories, grams: combined);
+  }
+
+  Nutrients operator *(double factor) => Nutrients(
+    calories: calories * factor,
+    grams: {for (final MapEntry(:key, :value) in grams.entries) key: value * factor},
+  );
+
+  Nutrients operator /(double divisor) => this * (1 / divisor);
 }
 
 class Tag {
