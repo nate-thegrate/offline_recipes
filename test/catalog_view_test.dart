@@ -23,7 +23,7 @@ void main() {
   }
 
   testWidgets('a priced recipe shows its price, and an unpriced one does not', (tester) async {
-    await tester.pumpWidget(const MainApp());
+    await tester.pumpWidget(const App());
     await tester.pumpAndSettle();
 
     await openRecipe(tester, 'ice cream');
@@ -70,7 +70,7 @@ void main() {
   });
 
   testWidgets('directions drop markup and keep the words', (tester) async {
-    await tester.pumpWidget(const MainApp());
+    await tester.pumpWidget(const App());
     await tester.pumpAndSettle();
 
     await openRecipe(tester, 'aebleskivers');
@@ -103,7 +103,7 @@ void main() {
   });
 
   testWidgets('meal filters hide recipes from other meals', (tester) async {
-    await tester.pumpWidget(const MainApp());
+    await tester.pumpWidget(const App());
     await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const ValueKey('meal-drink')));
@@ -122,10 +122,63 @@ void main() {
     expect(find.byKey(const ValueKey('recipe-chili')), findsNothing);
   });
 
+  testWidgets('selecting a recipe highlights that row', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(1200, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(const App());
+    await tester.pumpAndSettle();
+
+    ListTile tile(String name) {
+      return tester.widget<ListTile>(
+        find.descendant(of: find.byKey(ValueKey('recipe-$name')), matching: find.byType(ListTile)),
+      );
+    }
+
+    await tester.tap(find.byKey(const ValueKey('recipe-cornbread')));
+    await tester.pump();
+
+    expect(tile('cornbread').selected, isTrue);
+    expect(tile('popcorn').selected, isFalse);
+
+    await tester.tap(find.byKey(const ValueKey('recipe-popcorn')));
+    await tester.pump();
+
+    expect(tile('cornbread').selected, isFalse);
+    expect(tile('popcorn').selected, isTrue);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('the app bar keeps its color while the list scrolls', (tester) async {
+    await tester.pumpWidget(const App());
+    await tester.pumpAndSettle();
+
+    Material appBarMaterial() {
+      return tester.widget<Material>(
+        find.descendant(of: find.byType(AppBar), matching: find.byType(Material)).first,
+      );
+    }
+
+    final resting = appBarMaterial().color;
+    await tester.drag(find.byKey(const ValueKey('recipe-list')), const Offset(0, -400));
+    await tester.pumpAndSettle();
+    final position = tester
+        .state<ScrollableState>(
+          find.descendant(
+            of: find.byKey(const ValueKey('recipe-list')),
+            matching: find.byType(Scrollable),
+          ),
+        )
+        .position;
+
+    expect(position.pixels, greaterThan(0));
+    expect(appBarMaterial().color, resting);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('a wide window keeps the list beside the recipe', (tester) async {
     await tester.binding.setSurfaceSize(const Size(1200, 800));
     addTearDown(() => tester.binding.setSurfaceSize(null));
-    await tester.pumpWidget(const MainApp());
+    await tester.pumpWidget(const App());
     await tester.pumpAndSettle();
 
     await openRecipe(tester, 'red velvet cake');
@@ -148,7 +201,7 @@ void main() {
   testWidgets('a phone-sized window can scroll a priced recipe', (tester) async {
     await tester.binding.setSurfaceSize(const Size(390, 844));
     addTearDown(() => tester.binding.setSurfaceSize(null));
-    await tester.pumpWidget(const MainApp());
+    await tester.pumpWidget(const App());
     await tester.pumpAndSettle();
 
     await openRecipe(tester, 'ice cream');

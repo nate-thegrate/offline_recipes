@@ -15,10 +15,10 @@ void main() async {
 
   SignalsObserver.instance = null;
   await loadCatalog();
-  runApp(const MainApp());
+  runApp(const App());
 }
 
-class MainApp extends StatelessWidget {
+class App extends StatelessWidget {
   const new({super.key});
 
   @override
@@ -26,6 +26,7 @@ class MainApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Recipes',
+      navigatorKey: navKey,
       theme: ThemeData(colorSchemeSeed: const Color(0xFF8A5A34), brightness: .light),
       darkTheme: ThemeData(colorSchemeSeed: const Color(0xFF8A5A34), brightness: .dark),
       home: const CatalogPage(),

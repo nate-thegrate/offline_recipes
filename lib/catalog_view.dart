@@ -8,60 +8,132 @@ final meal = signal<String?>(null);
 final query = signal('');
 final selected = signal<Recipe?>(null);
 
+const navKey = GlobalObjectKey<NavigatorState>(#navigator);
+NavigatorState get navigator => navKey.currentState!;
+
 class CatalogPage extends StatelessWidget {
   const new({super.key});
 
+  static void _navigateRecipe(Recipe recipe) {
+    final route = MaterialPageRoute<void>(
+      builder: (context) => Scaffold(
+        appBar: AppBar(title: Text(titleCase(recipe.name))),
+        body: RecipeDetail(recipe: recipe, showTitle: false),
+      ),
+    );
+    navigator.push(route);
+  }
+
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final wide = constraints.maxWidth >= 840;
-        return Scaffold(
-          appBar: AppBar(title: const Text('Recipes')),
-          body: wide
-              ? Row(
+    return Scaffold(
+      appBar: AppBar(
+        toolbarHeight: 64,
+        titleTextStyle: TextTheme.of(context).bodyLarge,
+        excludeHeaderSemantics: true,
+        notificationPredicate: (_) => false,
+        title: const RecipeSearchField(),
+      ),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          return constraints.maxWidth >= 840
+              ? const Row(
                   children: [
-                    SizedBox(
-                      width: 380,
-                      child: RecipeBrowser(onOpen: (recipe) => selected.value = recipe),
-                    ),
-                    const VerticalDivider(width: 1),
-                    const Expanded(child: SelectedRecipe()),
+                    SizedBox(width: 380, child: RecipeBrowser()),
+                    VerticalDivider(width: 1),
+                    Expanded(child: SelectedRecipe()),
                   ],
                 )
-              : RecipeBrowser(
-                  onOpen: (recipe) {
-                    selected.value = recipe;
-                    Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (context) => Scaffold(
-                          appBar: AppBar(title: Text(titleCase(recipe.name))),
-                          body: RecipeDetail(recipe: recipe, showTitle: false),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-        );
-      },
+              : const RecipeBrowser(onSelect: _navigateRecipe);
+        },
+      ),
     );
   }
 }
 
 class RecipeBrowser extends StatelessWidget {
-  const new({required this.onOpen, super.key});
+  const new({this.onSelect, super.key});
 
-  final ValueChanged<Recipe> onOpen;
+  final ValueChanged<Recipe>? onSelect;
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: .stretch,
       children: [
-        const Padding(padding: EdgeInsets.fromLTRB(16, 12, 16, 8), child: RecipeSearchField()),
         const MealFilters(),
-        Expanded(child: RecipeList(onOpen: onOpen)),
+        Expanded(
+          child: SignalBuilder(
+            builder: (context) {
+              final mealName = meal.value;
+              final text = query.value;
+              final matching = [
+                for (final recipe in recipes)
+                  if (recipe.matches(mealName, text)) recipe,
+              ];
+              if (matching.isEmpty) {
+                return const Center(child: Text('No recipes match.'));
+              }
+              return ListView.separated(
+                key: const ValueKey('recipe-list'),
+                itemCount: matching.length,
+                separatorBuilder: (context, index) => const Divider(height: 1),
+                itemBuilder: (context, index) {
+                  final recipe = matching[index];
+                  return _RecipeTile(
+                    key: ValueKey('recipe-${recipe.name}'),
+                    recipe: recipe,
+                    onSelect: onSelect,
+                  );
+                },
+              );
+            },
+          ),
+        ),
       ],
+    );
+  }
+}
+
+class _RecipeTile extends SignalStatefulWidget {
+  const new({required this.recipe, required this.onSelect, super.key});
+
+  final Recipe recipe;
+  final ValueChanged<Recipe>? onSelect;
+
+  @override
+  State<_RecipeTile> createState() => _RecipeTileState();
+}
+
+class _RecipeTileState extends State<_RecipeTile> {
+  late final ReadonlySignal<bool> _highlighted = computed(_isHighlighted);
+
+  bool _isHighlighted() => selected.value == widget.recipe;
+
+  @override
+  Widget build(BuildContext context) {
+    final recipe = widget.recipe;
+    final textTheme = TextTheme.of(context);
+    final highlighted = _highlighted.value;
+    return ListTile(
+      selected: highlighted,
+      title: Text(titleCase(recipe.name)),
+      subtitle: Text(recipeSubtitle(recipe)),
+      trailing: recipe.isPriced
+          ? Column(
+              mainAxisAlignment: .center,
+              crossAxisAlignment: .end,
+              mainAxisSize: .min,
+              children: [
+                Text(recipe.servingPrice.toString(), style: textTheme.titleMedium),
+                if (recipe.servingsSpecified) Text('each', style: textTheme.labelSmall),
+              ],
+            )
+          : null,
+      onTap: () {
+        selected.value = recipe;
+        widget.onSelect?.call(recipe);
+      },
     );
   }
 }
@@ -106,7 +178,7 @@ class MealFilters extends SignalWidget {
   Widget build(BuildContext context) {
     final current = meal.value;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
       child: Wrap(
         spacing: 8,
         runSpacing: 8,
@@ -120,53 +192,6 @@ class MealFilters extends SignalWidget {
             ),
         ],
       ),
-    );
-  }
-}
-
-class RecipeList extends SignalWidget {
-  const new({required this.onOpen, super.key});
-
-  final ValueChanged<Recipe> onOpen;
-
-  @override
-  Widget build(BuildContext context) {
-    final mealName = meal.value;
-    final normalizedQuery = query.value.trim().toLowerCase();
-    final selectedName = selected.value?.name;
-    final matching = [
-      for (final recipe in recipes)
-        if (_matches(recipe, mealName, normalizedQuery)) recipe,
-    ];
-    if (matching.isEmpty) {
-      return const Center(child: Text('No recipes match.'));
-    }
-    final theme = Theme.of(context);
-    return ListView.separated(
-      key: const ValueKey('recipe-list'),
-      itemCount: matching.length,
-      separatorBuilder: (context, index) => const Divider(height: 1),
-      itemBuilder: (context, index) {
-        final recipe = matching[index];
-        return ListTile(
-          key: ValueKey('recipe-${recipe.name}'),
-          selected: recipe.name == selectedName,
-          title: Text(titleCase(recipe.name)),
-          subtitle: Text(recipeSubtitle(recipe)),
-          trailing: recipe.isPriced
-              ? Column(
-                  mainAxisAlignment: .center,
-                  crossAxisAlignment: .end,
-                  mainAxisSize: .min,
-                  children: [
-                    Text(recipe.servingPrice.toString(), style: theme.textTheme.titleMedium),
-                    if (recipe.servingsSpecified) Text('each', style: theme.textTheme.labelSmall),
-                  ],
-                )
-              : null,
-          onTap: () => onOpen(recipe),
-        );
-      },
     );
   }
 }
@@ -379,28 +404,6 @@ class _NutrientList extends StatelessWidget {
     if (dailyGrams == null || dailyGrams == 0) return '';
     return '${(grams / dailyGrams * 100).round()}%';
   }
-}
-
-bool _matches(Recipe recipe, String? meal, String query) {
-  if (meal != null && !recipe.meals.contains(meal)) return false;
-  if (query.isEmpty) return true;
-  final haystack = StringBuffer(recipe.name);
-  for (final mealName in recipe.meals) {
-    haystack
-      ..write('\n')
-      ..write(mealName);
-  }
-  for (final line in recipe.lines) {
-    haystack
-      ..write('\n')
-      ..write(line.text);
-  }
-  for (final direction in recipe.directions) {
-    haystack
-      ..write('\n')
-      ..write(direction);
-  }
-  return haystack.toString().toLowerCase().contains(query);
 }
 
 String recipeSubtitle(Recipe recipe) {

@@ -132,7 +132,30 @@ class Recipe implements Food {
   final List<RecipeLine> lines;
   final List<String> directions;
 
-  bool get isPriced {
+  late final bool isPriced = _hasPrice();
+
+  @override
+  late final Price totalPrice = isPriced ? _sumPrices() : const Price(0);
+
+  @override
+  late final NutritionFacts totalNutrition = isPriced ? _sumNutrition() : .none;
+
+  late final String _searchText = _searchableText();
+
+  @override
+  Price get servingPrice => totalPrice / servings;
+
+  @override
+  NutritionFacts get servingNutrition => totalNutrition / servings;
+
+  bool matches(String? mealName, String query) {
+    if (mealName != null && !meals.contains(mealName)) return false;
+    final normalized = query.trim().toLowerCase();
+    if (normalized.isEmpty) return true;
+    return _searchText.contains(normalized);
+  }
+
+  bool _hasPrice() {
     if (!calculatesNutrition) return false;
     var anyRequired = false;
     for (final line in lines) {
@@ -142,18 +165,6 @@ class Recipe implements Food {
     }
     return anyRequired;
   }
-
-  @override
-  Price get totalPrice => isPriced ? _sumPrices() : const Price(0);
-
-  @override
-  Price get servingPrice => totalPrice / servings;
-
-  @override
-  NutritionFacts get totalNutrition => isPriced ? _sumNutrition() : .none;
-
-  @override
-  NutritionFacts get servingNutrition => totalNutrition / servings;
 
   Price _sumPrices() {
     var dollars = 0.0;
@@ -173,6 +184,26 @@ class Recipe implements Food {
       }
     }
     return sum;
+  }
+
+  String _searchableText() {
+    final haystack = StringBuffer(name);
+    for (final mealName in meals) {
+      haystack
+        ..write('\n')
+        ..write(mealName);
+    }
+    for (final line in lines) {
+      haystack
+        ..write('\n')
+        ..write(line.text);
+    }
+    for (final direction in directions) {
+      haystack
+        ..write('\n')
+        ..write(direction);
+    }
+    return haystack.toString().toLowerCase();
   }
 }
 

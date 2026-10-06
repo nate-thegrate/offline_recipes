@@ -208,6 +208,16 @@ void main() {
     expect(sandwich.isPriced, isFalse);
   });
 
+  test('search matches ingredients and directions within the selected meal', () {
+    final rolls = recipes['cinnamon rolls'];
+
+    expect(rolls.matches(null, 'dental floss'), isTrue);
+    expect(rolls.matches(null, '  Erythritol '), isTrue);
+    expect(rolls.matches(null, ''), isTrue);
+    expect(rolls.matches('drink', 'dental floss'), isFalse);
+    expect(rolls.matches(null, 'avocado'), isFalse);
+  });
+
   test('every recipe keeps its meals, ingredients, and directions', () {
     expect(recipes, isNotEmpty);
     for (final recipe in recipes) {
