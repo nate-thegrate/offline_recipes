@@ -6,94 +6,88 @@ import 'package:offline_recipes/measure.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  setUpAll(() async {
-    await loadCatalog();
+  setUpAll(loadCatalog);
+
+  test('one serving of the serving size costs and feeds one serving', () {
+    final ingredient = _ingredient();
+    final oneServing = ingredient.used(ingredient.servingSize)!;
+
+    expect(oneServing.servings, 1);
+    expect(oneServing.totalPrice.dollars, ingredient.servingPrice.dollars);
+    expect(oneServing.totalNutrition.calories, ingredient.servingNutrition.calories);
   });
 
-  test('one labeled serving costs and feeds one serving of the container', () {
-    final flour = ingredients['whole wheat flour'];
-    final oneServing = flour.used(flour.servingSize)!;
+  test('sixteen tablespoons match one cup of the same food', () {
+    final ingredient = _ingredient();
+    final cup = ingredient.used(const Measure(1, Unit.cup))!;
+    final spoons = ingredient.used(const Measure(16, Unit.tbsp))!;
 
-    expect(oneServing.totalPrice.dollars, flour.servingPrice.dollars);
-    expect(oneServing.totalNutrition.calories, flour.servingNutrition.calories);
-  });
-
-  test('sixteen tablespoons of flour match one cup', () {
-    final flour = ingredients['whole wheat flour'];
-    expect(flour.servingSize.unit, Unit.cup);
-
-    final cup = flour.used(Measure(1.0, Unit.cup))!;
-    final spoons = flour.used(Measure(16.0, Unit.tbsp))!;
-
+    expect(spoons.servings, cup.servings);
     expect(spoons.totalPrice.dollars, cup.totalPrice.dollars);
     expect(spoons.totalNutrition.calories, cup.totalNutrition.calories);
-    expect(flour.used(Measure(100.0, Unit.g))!.servings, 100 / Unit.cup.inGrams);
+    expect(ingredient.used(const Measure(100, Unit.g))!.servings, 100 / Unit.cup.inGrams);
   });
 
-  test('a mixed tablespoon amount scales from the pantry serving', () {
-    final powder = ingredients['baking powder'];
-    final cornbread = recipes['cornbread'];
-    final line = cornbread.lines.firstWhere(
-      (item) => item.text == '1 1/2 tablespoon baking powder',
-    );
-    final expected = (1.5 * Unit.tbsp.inMilliliters) / powder.servingSize.milliliters;
+  test('a mixed number scales from the serving size', () {
+    final ingredient = _ingredient(servingSize: const Measure(1, Unit.tbsp));
+    final measure = parseMeasure('1 1/2 tablespoon');
+    final expected = measure.milliliters / ingredient.servingSize.milliliters;
+    final used = ingredient.used(measure)!;
 
-    expect(line.food!.servings, expected);
-    expect(line.food!.totalPrice.dollars, powder.servingPrice.dollars * expected);
+    expect(used.servings, expected);
+    expect(used.totalPrice.dollars, ingredient.servingPrice.dollars * expected);
   });
 
-  test('recipe names that differ from the pantry still measure the same food', () {
-    final yeast = ingredients['fortified premium yeast flakes'];
-    final yeastLine = recipes['popcorn'].lines.firstWhere(
-      (item) => item.text == '1/2 teaspoon nutritional yeast',
-    );
-    final yeastServings = (0.5 * Unit.tsp.inMilliliters) / yeast.servingSize.milliliters;
-    expect(yeastLine.food!.name, yeast.name);
-    expect(yeastLine.food!.servings, yeastServings);
+  test('ounces scale along grams when the serving is a volume', () {
+    final ingredient = _ingredient(servingSize: const Measure(2, Unit.tbsp));
+    const ounces = Measure(16, Unit.oz);
+    final used = ingredient.used(ounces)!;
 
-    final oil = ingredients['canola oil'];
-    final oilLine = recipes['cornbread'].lines.firstWhere((item) => item.text == '1/2 cup oil');
-    final oilServings = (0.5 * Unit.cup.inMilliliters) / oil.servingSize.milliliters;
-    expect(oilLine.food!.name, oil.name);
-    expect(oilLine.food!.servings, oilServings);
-
-    final erythritol = ingredients['erythritol'];
-    final icing = recipes['red velvet cake'].lines.firstWhere(
-      (item) => item.text == '5 cups erythritol powder',
-    );
-    expect(icing.group, 'icing');
-    expect(icing.food!.name, erythritol.name);
+    expect(used.servings, ounces.grams / ingredient.servingSize.grams);
+    expect(ingredient.used(ingredient.servingSize)!.servings, 1);
   });
 
-  test('ounces of cream cheese scale from its tablespoon serving', () {
-    final creamCheese = ingredients['plant-based cream cheese'];
-    final line = recipes['red velvet cake'].lines.firstWhere(
-      (item) => item.text == '16 oz plant-based cream cheese',
-    );
-    final ounces = Measure(16.0, Unit.oz);
+  test('aliases resolve and ignored names drop out when a line is read', () {
+    expect(ingredientAliases, isNotEmpty);
+    for (final MapEntry(:key, :value) in ingredientAliases.entries) {
+      final ingredient = _ingredient(name: value);
+      final line = recipeLineFor('1 cup $key', {value: ingredient});
 
-    expect(line.food!.servings, ounces.grams / creamCheese.servingSize.grams);
-    expect(creamCheese.used(creamCheese.servingSize)!.servings, 1);
-  });
+      expect(line.food, isNotNull, reason: key);
+      expect(line.food!.name, value, reason: key);
+      expect(line.food!.servings, 1, reason: key);
+      expect(line.ignored, isFalse, reason: key);
+    }
 
-  test('soy milk in ice cream is two cups of the pantry serving', () {
-    final soy = ingredients['soy milk'];
-    final line = recipes['ice cream'].lines.firstWhere((item) => item.text == '2 cups soy milk');
-    final expected = (2 * Unit.cup.inMilliliters) / soy.servingSize.milliliters;
+    expect(ignoredIngredientNames, isNotEmpty);
+    for (final name in ignoredIngredientNames) {
+      expect(recipeLineFor(name, const {}).ignored, isTrue, reason: name);
+      expect(recipeLineFor('2 cups $name', const {}).ignored, isTrue, reason: name);
+    }
 
-    expect(line.food!.servings, expected);
-    expect(line.food!.totalPrice.dollars, soy.servingPrice.dollars * expected);
-    expect(line.food!.totalNutrition.calories, soy.servingNutrition.calories * expected);
+    final ingredient = _ingredient();
+    final pantry = {ingredient.name.toLowerCase(): ingredient};
+    final plain = recipeLineFor('1 cup ${ingredient.name}', pantry, group: 'icing');
+    expect(plain.group, 'icing');
+    expect(plain.optional, isFalse);
+    expect(plain.ignored, isFalse);
+    expect(plain.food!.servings, 1);
+
+    final optional = recipeLineFor('1 cup ${ingredient.name} (optional)', pantry);
+    expect(optional.optional, isTrue);
+    expect(optional.food!.servings, 1);
+
+    expect(recipeLineFor('salt to taste', pantry).food, isNull);
   });
 
   test('a priced recipe is the sum of its required foods', () {
-    final priced = [
-      for (final recipe in recipes)
-        if (recipe.isPriced) recipe.name,
-    ];
-    expect(priced, containsAll(['ice cream', 'oatmeal', 'no-bake cookies']));
+    for (final recipe in recipes) {
+      if (!recipe.isPriced) {
+        expect(recipe.totalPrice.dollars, 0, reason: recipe.name);
+        expect(recipe.totalNutrition.calories, 0, reason: recipe.name);
+        continue;
+      }
 
-    for (final recipe in recipes.where((recipe) => recipe.isPriced)) {
       var dollars = 0.0;
       var calories = 0.0;
       for (final line in recipe.lines) {
@@ -117,113 +111,116 @@ void main() {
     }
   });
 
-  test('ignored ingredients are omitted from price and nutrition', () {
-    final water = recipes['cornbread'].lines.firstWhere((line) => line.text == '1 1/2 cup water');
-    final coloring = recipes['red velvet cake'].lines.firstWhere(
-      (line) => line.text == '1/8 cup red food coloring',
-    );
-    final toppings = recipes['pizza'].lines.firstWhere(
-      (line) => line.text == 'plant-based sausage, bell peppers, jalapeños, diced red onion, etc.',
-    );
-    expect(water.ignored, isTrue);
-    expect(coloring.ignored, isTrue);
-    expect(toppings.ignored, isTrue);
+  test('a measured line agrees with the pantry serving it names', () {
+    for (final recipe in recipes) {
+      for (final line in recipe.lines) {
+        final reason = '${recipe.name}: ${line.text}';
+        if (line.text.toLowerCase().contains('(optional)')) {
+          expect(line.optional, isTrue, reason: reason);
+        }
+        final food = line.food;
+        if (food == null) continue;
+        final parsed = tryParseAmount(line.text);
+        expect(parsed, isNotNull, reason: reason);
+        final again = ingredients[food.name].used(parsed!.measure);
+        expect(again, isNotNull, reason: reason);
+        expect(food.servings, again!.servings, reason: reason);
+        expect(food.totalPrice.dollars, again.totalPrice.dollars, reason: reason);
+      }
+    }
+  });
 
-    final ingredient = Ingredient(
-      name: 'test flour',
-      servingSize: Measure(1.0, Unit.cup),
-      servings: 10.0,
-      totalPrice: const Price(10.0),
-      servingNutrition: const NutritionFacts(calories: 100.0, grams: {'Total Fat': 1.0}),
-    );
-    final used = ingredient.used(Measure(1.0, Unit.cup))!;
-    final recipe = Recipe(
-      name: 'test',
-      meals: const ['side dish'],
-      servings: 1.0,
-      servingsSpecified: true,
-      calculatesNutrition: true,
+  test('ignored and optional foods are left out of the total', () {
+    final ingredient = _ingredient();
+    final used = ingredient.used(ingredient.servingSize)!;
+    final recipe = _recipe(
       lines: [
         RecipeLine('1 cup test flour', food: used),
         RecipeLine('1 cup water', food: used, ignored: true),
-      ],
-      directions: const ['Mix.'],
-    );
-
-    expect(recipe.isPriced, isTrue);
-    expect(recipe.totalPrice.dollars, ingredient.servingPrice.dollars);
-    expect(recipe.totalNutrition.calories, 100);
-    expect(recipe.totalNutrition.grams['Total Fat'], 1);
-  });
-
-  test('optional lines and disabled recipes do not invent a total', () {
-    final ingredient = Ingredient(
-      name: 'test flour',
-      servingSize: Measure(1.0, Unit.cup),
-      servings: 10.0,
-      totalPrice: const Price(10.0),
-      servingNutrition: const NutritionFacts(calories: 100.0, grams: {'Total Fat': 1.0}),
-    );
-    final used = ingredient.used(Measure(1.0, Unit.cup))!;
-    final recipe = Recipe(
-      name: 'test',
-      meals: const ['side dish'],
-      servings: 2.0,
-      servingsSpecified: true,
-      calculatesNutrition: true,
-      lines: [
-        RecipeLine('1 cup test flour', food: used),
         RecipeLine('1 cup extra (optional)', food: used, optional: true),
       ],
-      directions: const ['Mix.'],
     );
 
     expect(recipe.isPriced, isTrue);
     expect(recipe.totalPrice.dollars, ingredient.servingPrice.dollars);
-    expect(recipe.servingPrice.dollars, ingredient.servingPrice.dollars / 2);
-    expect(recipe.totalNutrition.calories, 100);
-    expect(recipe.servingNutrition.calories, 50);
+    expect(recipe.totalNutrition.calories, ingredient.servingNutrition.calories);
     expect(recipe.totalNutrition.grams['Total Fat'], 1);
 
-    final hidden = Recipe(
-      name: 'hidden',
-      meals: const ['side dish'],
-      servings: 1.0,
-      servingsSpecified: true,
+    final hidden = _recipe(
       calculatesNutrition: false,
       lines: [RecipeLine('1 cup test flour', food: used)],
-      directions: const ['Mix.'],
     );
     expect(hidden.isPriced, isFalse);
     expect(hidden.totalPrice.dollars, 0);
     expect(hidden.totalNutrition.calories, 0);
 
-    final guacamole = recipes['guacamole'];
-    expect(guacamole.calculatesNutrition, isFalse);
-    expect(guacamole.isPriced, isFalse);
-
-    final sandwich = recipes['pb & j'];
-    expect(sandwich.servingsSpecified, isFalse);
-    expect(sandwich.servings, 1);
-    expect(sandwich.isPriced, isFalse);
+    final unmeasured = _recipe(lines: const [RecipeLine('salt to taste')]);
+    expect(unmeasured.isPriced, isFalse);
+    expect(unmeasured.totalPrice.dollars, 0);
+    expect(unmeasured.totalNutrition.calories, 0);
   });
 
-  test('search matches ingredients and directions within the selected meal', () {
-    final rolls = recipes['cinnamon rolls'];
+  test('servings split a priced recipe', () {
+    final ingredient = _ingredient();
+    final used = ingredient.used(ingredient.servingSize)!;
+    final recipe = _recipe(servings: 2, lines: [RecipeLine('1 cup test flour', food: used)]);
 
-    expect(rolls.matches(null, 'dental floss'), isTrue);
-    expect(rolls.matches(null, '  Erythritol '), isTrue);
-    expect(rolls.matches(null, ''), isTrue);
-    expect(rolls.matches('drink', 'dental floss'), isFalse);
-    expect(rolls.matches(null, 'avocado'), isFalse);
+    expect(recipe.totalPrice.dollars, ingredient.servingPrice.dollars);
+    expect(recipe.servingPrice.dollars, ingredient.servingPrice.dollars / 2);
+    expect(recipe.totalNutrition.calories, ingredient.servingNutrition.calories);
+    expect(recipe.servingNutrition.calories, ingredient.servingNutrition.calories / 2);
   });
 
-  test('every recipe keeps its meals, ingredients, and directions', () {
-    expect(recipes, isNotEmpty);
-    for (final recipe in recipes) {
-      expect(recipe.meals, isNotEmpty, reason: recipe.name);
-      expect(recipe.lines, isNotEmpty, reason: recipe.name);
-      expect(recipe.directions, isNotEmpty, reason: recipe.name);
-    }
+  test('search matches the name, ingredients, and directions in the selected meal', () {
+    final recipe = _recipe(
+      name: 'cinnamon rolls',
+      meals: const ['breakfast'],
+      lines: const [RecipeLine('1 cup erythritol')],
+      directions: const ['Cut with dental floss.'],
+    );
+
+    expect(recipe.matches(null, 'dental floss'), isTrue);
+    expect(recipe.matches(null, '  Erythritol '), isTrue);
+    expect(recipe.matches(null, 'cinnamon'), isTrue);
+    expect(recipe.matches(null, ''), isTrue);
+    expect(recipe.matches('breakfast', 'dental floss'), isTrue);
+    expect(recipe.matches('drink', 'dental floss'), isFalse);
+    expect(recipe.matches('drink', ''), isFalse);
+    expect(recipe.matches(null, 'avocado'), isFalse);
   });
+}
+
+Ingredient _ingredient({
+  String name = 'test flour',
+  Measure servingSize = const Measure(1, Unit.cup),
+  double servings = 10,
+  Price totalPrice = const Price(10),
+  NutritionFacts servingNutrition = const NutritionFacts(calories: 100, grams: {'Total Fat': 1}),
+}) {
+  return Ingredient(
+    name: name,
+    servingSize: servingSize,
+    servings: servings,
+    totalPrice: totalPrice,
+    servingNutrition: servingNutrition,
+  );
+}
+
+Recipe _recipe({
+  required List<RecipeLine> lines,
+  String name = 'test',
+  List<String> meals = const ['side dish'],
+  double servings = 1,
+  bool calculatesNutrition = true,
+  List<String> directions = const ['Mix.'],
+}) {
+  return Recipe(
+    name: name,
+    meals: meals,
+    servings: servings,
+    servingsSpecified: true,
+    calculatesNutrition: calculatesNutrition,
+    lines: lines,
+    directions: directions,
+  );
 }

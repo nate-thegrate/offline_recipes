@@ -1,4 +1,5 @@
 import 'package:flutter/services.dart';
+import 'package:meta/meta.dart';
 import 'package:yaml/yaml.dart';
 
 import 'food.dart';
@@ -6,13 +7,15 @@ import 'measure.dart';
 
 const _microgram = '\u00B5g';
 
-const _ignoredIngredients = <String>{
+@visibleForTesting
+const ignoredIngredientNames = <String>{
   'water',
   'red food coloring',
   'plant-based sausage, bell peppers, jalapeños, diced red onion, etc.',
 };
 
-const _ingredientAliases = <String, String>{
+@visibleForTesting
+const ingredientAliases = <String, String>{
   'erythritol powder': 'erythritol',
   'sweetener': 'sucralose',
   'nutritional yeast': 'fortified premium yeast flakes',
@@ -361,7 +364,7 @@ List<RecipeLine> _lines(Object? value, Map<String, Ingredient> ingredients, Stri
 RecipeLine _line(String text, Map<String, Ingredient> ingredients, {String? group}) {
   final parsed = tryParseAmount(text);
   final name = parsed == null || parsed.name.isEmpty ? text : parsed.name;
-  final ignored = _ignoredIngredients.contains(_normalize(name));
+  final ignored = ignoredIngredientNames.contains(_normalized(name));
   IngredientAmount? food;
   if (parsed != null && parsed.name.isNotEmpty) {
     food = ingredients[_canonicalName(parsed.name)]?.used(parsed.measure);
@@ -375,7 +378,7 @@ RecipeLine _line(String text, Map<String, Ingredient> ingredients, {String? grou
   );
 }
 
-String _normalize(String name) {
+String _normalized(String name) {
   var key = name.toLowerCase();
   final parenthesis = key.indexOf('(');
   if (parenthesis != -1) key = key.substring(0, parenthesis);
@@ -384,7 +387,14 @@ String _normalize(String name) {
   return key;
 }
 
-String _canonicalName(String name) => _ingredientAliases[_normalize(name)] ?? _normalize(name);
+String _canonicalName(String name) {
+  name = _normalized(name);
+  return ingredientAliases[name] ?? name;
+}
+
+@visibleForTesting
+RecipeLine recipeLineFor(String text, Map<String, Ingredient> pantry, {String? group}) =>
+    _line(text, pantry, group: group);
 
 ({NutritionFacts facts, Map<String, String> measurements}) _parseNutrition(YamlMap document) {
   var calories = 0.0;

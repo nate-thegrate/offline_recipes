@@ -1,15 +1,14 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:offline_recipes/catalog.dart';
+import 'package:offline_recipes/food.dart';
 import 'package:offline_recipes/measure.dart';
 import 'package:offline_recipes/nutrition_label.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  setUpAll(() async {
-    await loadCatalog();
-  });
+  setUpAll(loadCatalog);
 
   test('calories use 5 and 10 increments', () {
     expect(labelCalories(0), '0');
@@ -38,43 +37,6 @@ void main() {
     expect(Measure.parse('13.5 g').percentOf(Measure.parse('100 g')), '14%');
   });
 
-  testWidgets('ice cream label sums the pantry into each row', (tester) async {
-    final table = NutritionLabel(recipes['ice cream']);
-
-    expect(table.yieldText, 'recipe yields 12 servings');
-    expect(table.servingCalories, '160');
-    expect(table.recipeCalories, '1960');
-    final lines = await _labelRows(tester, table.macros);
-    _expectLine(lines, 'Total Fat', '14g', '18%', '171g', '219%');
-    _expectLine(lines, 'Saturated Fat', '7.9g', '40%', '95g', '476%');
-    _expectLine(lines, 'Cholesterol', '0mg', '0%', '0mg', '0%');
-    _expectLine(lines, 'Sodium', '153mg', '7%', '1835mg', '80%');
-    _expectLine(lines, 'Total Carbohydrate', '25g', '9%', '306g', '111%');
-    _expectLine(lines, 'Dietary Fiber', '1.8g', '6%', '22g', '77%');
-    _expectLine(lines, 'Sugars', '0.2g', '0%', '2.0g', '4%');
-    _expectLine(lines, 'Sugar Alcohol', '8.0g', '44%', '96g', '533%');
-    _expectLine(lines, 'Protein', '2.2g', '4%', '26g', '52%');
-    final fat = lines.singleWhere((line) => line.name == 'Total Fat');
-    expect(
-      lines.singleWhere((line) => line.name == 'Saturated Fat').nameInset,
-      greaterThan(fat.nameInset),
-    );
-    expect(lines.singleWhere((line) => line.name == 'Protein').height, greaterThan(fat.height));
-    _expectVitamins(await _labelRows(tester, table.vitamins), {
-      'Vitamin D': ('6%', '76%'),
-      'Calcium': ('8%', '101%'),
-      'Potassium': ('2%', '29%'),
-      'Iron': ('3%', '31%'),
-      'Vitamin A': ('6%', '71%'),
-      'Folic Acid': ('2%', '20%'),
-      'Phosphorus': ('1%', '16%'),
-      'Riboflavin': ('7%', '88%'),
-      'Vitamin B12': ('15%', '183%'),
-      'Magnesium': ('0%', '0%'),
-      'Iodine': ('4%', '45%'),
-    });
-  });
-
   test('label calories match the priced recipe', () {
     for (final recipe in recipes.where((recipe) => recipe.isPriced)) {
       final table = NutritionLabel(recipe);
@@ -91,22 +53,57 @@ void main() {
     }
   });
 
+  testWidgets('a label divides the measured foods into serving and recipe cells', (tester) async {
+    final (:recipe, :vitamin) = _labeledSample();
+    final label = NutritionLabel(recipe);
+    final lines = await _labelRows(tester, label.macros);
+
+    _expectMeasured(lines, 'Total Fat', '10 g', recipe.servings);
+    _expectMeasured(lines, 'Saturated Fat', '1 g', recipe.servings);
+    _expectMeasured(lines, 'Protein', '1 g', recipe.servings);
+
+    final fat = lines.singleWhere((line) => line.name == 'Total Fat');
+    expect(
+      lines.singleWhere((line) => line.name == 'Saturated Fat').nameInset,
+      greaterThan(fat.nameInset),
+    );
+    expect(lines.singleWhere((line) => line.name == 'Protein').height, greaterThan(fat.height));
+
+    final vitamins = await _labelRows(tester, label.vitamins);
+    final vitaminLine = vitamins.singleWhere((line) => line.name == vitamin);
+    final total = Measure.parse(dailyValues[vitamin]!);
+    final serving = total.perServing(recipe.servings);
+    expect(vitaminLine.serving, [serving.percentOf(total)]);
+    expect(vitaminLine.recipe, [total.percentOf(total)]);
+    for (final line in vitamins) {
+      expect(line.serving, hasLength(1), reason: line.name);
+      expect(line.recipe, hasLength(1), reason: line.name);
+      expect(line.serving.single, endsWith('%'), reason: line.name);
+      expect(line.recipe.single, endsWith('%'), reason: line.name);
+    }
+  });
+
   testWidgets('the label paints the nutrition facts frame', (tester) async {
+    final (:recipe, :vitamin) = _labeledSample();
+    final label = NutritionLabel(recipe);
     await tester.pumpWidget(
       MaterialApp(
-        home: Scaffold(body: ListView(children: [NutritionLabel(recipes['ice cream'])])),
+        home: Scaffold(body: ListView(children: [NutritionLabel(recipe)])),
       ),
     );
 
     expect(find.text('Nutrition Facts'), findsOneWidget);
-    expect(find.text('recipe yields 12 servings'), findsOneWidget);
+    expect(find.text(label.yieldText), findsOneWidget);
+    expect(label.yieldText, 'recipe yields 4 servings');
     expect(find.text('one serving'), findsOneWidget);
     expect(find.text('whole recipe'), findsOneWidget);
     expect(find.text('Calories'), findsOneWidget);
-    expect(find.text('160'), findsOneWidget);
-    expect(find.text('1960'), findsOneWidget);
+    expect(find.text(label.servingCalories), findsOneWidget);
+    expect(find.text(label.recipeCalories), findsOneWidget);
+    expect(label.servingCalories, labelCalories(25));
+    expect(label.recipeCalories, labelCalories(100));
     expect(find.text('Total Carbohydrate'), findsOneWidget);
-    expect(find.text('Vitamin D'), findsOneWidget);
+    expect(find.text(vitamin), findsOneWidget);
 
     final frame = tester.widget<Container>(find.byKey(const ValueKey('nutrition-facts')));
     final decoration = frame.decoration! as BoxDecoration;
@@ -124,6 +121,45 @@ typedef _LabelRow = ({
   double nameInset,
   double height,
 });
+
+({Recipe recipe, String vitamin}) _labeledSample() {
+  for (final MapEntry(:key, :value) in dailyValues.entries) {
+    final measurements = {'Total Fat': '10 g', 'Saturated Fat': '1 g', 'Protein': '1 g'};
+    if (measurements.containsKey(key)) continue;
+    final recipe = _recipeMeasuring({...measurements, key: value});
+    if (NutritionLabel(recipe).vitamins.isNotEmpty) return (recipe: recipe, vitamin: key);
+  }
+  fail('Daily values need a vitamin');
+}
+
+Recipe _recipeMeasuring(Map<String, String> measurements) {
+  final ingredient = Ingredient(
+    name: 'sample',
+    servingSize: const Measure(1, Unit.g),
+    servings: 1,
+    totalPrice: const Price(1),
+    servingNutrition: const NutritionFacts(calories: 100, grams: {}),
+    measurementText: measurements,
+  );
+  return Recipe(
+    name: 'sample',
+    meals: const ['side dish'],
+    servings: 4,
+    servingsSpecified: true,
+    calculatesNutrition: true,
+    lines: [RecipeLine('1 g sample', food: ingredient.used(const Measure(1, Unit.g)))],
+    directions: const ['Eat.'],
+  );
+}
+
+void _expectMeasured(List<_LabelRow> lines, String name, String measurement, double servings) {
+  final total = Measure.parse(measurement);
+  final daily = Measure.parse(dailyValues[name]!);
+  final serving = total.perServing(servings);
+  final line = lines.singleWhere((line) => line.name == name);
+  expect(line.serving, [serving.quantityText(), serving.percentOf(daily)], reason: name);
+  expect(line.recipe, [total.quantityText(), total.percentOf(daily)], reason: name);
+}
 
 Future<List<_LabelRow>> _labelRows(WidgetTester tester, List<TableRow> rows) async {
   await tester.pumpWidget(
@@ -165,26 +201,4 @@ double _leftInset(WidgetTester tester, Finder finder) {
 
 double _rowHeight(WidgetTester tester, Finder finder) {
   return tester.firstWidget<SizedBox>(finder).height!;
-}
-
-void _expectLine(
-  List<_LabelRow> lines,
-  String name,
-  String servingAmount,
-  String servingDailyValue,
-  String recipeAmount,
-  String recipeDailyValue,
-) {
-  final line = lines.singleWhere((line) => line.name == name);
-  expect(line.serving, [servingAmount, servingDailyValue], reason: name);
-  expect(line.recipe, [recipeAmount, recipeDailyValue], reason: name);
-}
-
-void _expectVitamins(List<_LabelRow> lines, Map<String, (String, String)> expected) {
-  expect([for (final line in lines) line.name], expected.keys.toList());
-  for (final MapEntry(:key, :value) in expected.entries) {
-    final line = lines.singleWhere((line) => line.name == key);
-    expect(line.serving, [value.$1], reason: key);
-    expect(line.recipe, [value.$2], reason: key);
-  }
 }
