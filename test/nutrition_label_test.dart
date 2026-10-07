@@ -71,7 +71,7 @@ void main() {
 
     final vitamins = await _labelRows(tester, label.vitamins);
     final vitaminLine = vitamins.singleWhere((line) => line.name == vitamin);
-    final total = Measure.parse(dailyValues[vitamin]!);
+    final total = dailyValues[vitamin]!;
     final serving = total.perServing(recipe.servings);
     expect(vitaminLine.serving, [serving.percentOf(total)]);
     expect(vitaminLine.recipe, [total.percentOf(total)]);
@@ -126,7 +126,10 @@ typedef _LabelRow = ({
   for (final MapEntry(:key, :value) in dailyValues.entries) {
     final measurements = {'Total Fat': '10 g', 'Saturated Fat': '1 g', 'Protein': '1 g'};
     if (measurements.containsKey(key)) continue;
-    final recipe = _recipeMeasuring({...measurements, key: value});
+    final recipe = _recipeMeasuring({
+      ...measurements,
+      key: '${value.amount} ${value.unit.name.short}',
+    });
     if (NutritionLabel(recipe).vitamins.isNotEmpty) return (recipe: recipe, vitamin: key);
   }
   fail('Daily values need a vitamin');
@@ -154,7 +157,7 @@ Recipe _recipeMeasuring(Map<String, String> measurements) {
 
 void _expectMeasured(List<_LabelRow> lines, String name, String measurement, double servings) {
   final total = Measure.parse(measurement);
-  final daily = Measure.parse(dailyValues[name]!);
+  final daily = dailyValues[name]!;
   final serving = total.perServing(servings);
   final line = lines.singleWhere((line) => line.name == name);
   expect(line.serving, [serving.quantityText(), serving.percentOf(daily)], reason: name);

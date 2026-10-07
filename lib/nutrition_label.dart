@@ -18,12 +18,9 @@ const _calorieStyle = TextStyle(fontSize: 18, height: 21 / 18, fontWeight: .w700
 
 class NutritionLabel extends StatelessWidget {
   factory(Recipe recipe, {Key? key}) {
-    final daily = {
-      for (final MapEntry(:key, :value) in dailyValues.entries) key: Measure.parse(value),
-    };
     var calories = 0.0;
     final totals = {
-      for (final nutrient in _macros) nutrient.key: Measure(0, daily[nutrient.key]!.unit),
+      for (final nutrient in _macros) nutrient.key: Measure(0, dailyValues[nutrient.key]!.unit),
     };
     final vitaminTotals = <String, Measure>{};
     for (final line in recipe.lines) {
@@ -56,12 +53,12 @@ class NutritionLabel extends StatelessWidget {
             thickRule: nutrient.thickRule,
             serving: totals[nutrient.key]!.perServing(recipe.servings),
             recipe: totals[nutrient.key]!,
-            daily: daily[nutrient.key]!,
+            daily: dailyValues[nutrient.key]!,
           ),
       ],
       vitamins: [
         for (final MapEntry(:key, :value) in vitaminTotals.entries)
-          if (daily[key] case final dailyAmount?)
+          if (dailyValues[key] case final dailyAmount?)
             _nutrientRow(
               name: key,
               indented: false,
@@ -112,7 +109,9 @@ class NutritionLabel extends StatelessWidget {
           decoration: .none,
           leadingDistribution: .even,
         ),
-        child: Align(
+        maxLines: 1,
+        softWrap: false,
+        child: Center(
           heightFactor: 1,
           child: Container(
             key: const ValueKey('nutrition-facts'),
@@ -137,9 +136,6 @@ class NutritionLabel extends StatelessWidget {
                             child: Text(
                               'Nutrition Facts',
                               textAlign: .center,
-                              maxLines: 1,
-                              softWrap: false,
-                              overflow: .clip,
                               style: TextStyle(
                                 fontSize: 32,
                                 height: 1,
@@ -152,13 +148,7 @@ class NutritionLabel extends StatelessWidget {
                         ),
                         const SizedBox(height: 2, child: ColoredBox(color: _black)),
                         const SizedBox(height: 4),
-                        Text(
-                          yieldText,
-                          textAlign: .center,
-                          maxLines: 1,
-                          softWrap: false,
-                          overflow: .clip,
-                        ),
+                        Text(yieldText, textAlign: .center),
                         const SizedBox(height: 4),
                         const SizedBox(height: 16, child: ColoredBox(color: _black)),
                         const SizedBox(height: 2),
@@ -180,9 +170,12 @@ class NutritionLabel extends StatelessWidget {
                         children: _factCells(
                           lineHeight: 21,
                           rowHeight: 47,
-                          name: _alignedText('Calories', .centerLeft, style: _calorieStyle),
-                          serving: _alignedText(servingCalories, .center, style: _calorieStyle),
-                          recipe: _alignedText(recipeCalories, .center, style: _calorieStyle),
+                          name: Align(
+                            alignment: .centerLeft,
+                            child: Text('Calories', style: _calorieStyle),
+                          ),
+                          serving: Center(child: Text(servingCalories, style: _calorieStyle)),
+                          recipe: Center(child: Text(recipeCalories, style: _calorieStyle)),
                         ),
                       ),
                       ...macros,
@@ -248,23 +241,29 @@ TableRow _nutrientRow({
   required Measure daily,
   bool percentOnly = false,
 }) {
+  Widget cell(Measure measure) {
+    final percent = Align(
+      alignment: .centerRight,
+      child: Text(measure.percentOf(daily), style: _bodyBold),
+    );
+    if (percentOnly) return percent;
+
+    final quantity = Positioned(left: 2, child: Text(measure.quantityText()));
+    return Stack(alignment: .centerLeft, children: [quantity, percent]);
+  }
+
   return TableRow(
     decoration: thickRule ? _thickRules : _thinRules,
     children: _factCells(
       lineHeight: 14,
       rowHeight: thickRule ? 40 : 24,
       nameIndent: indented ? 12 : 0,
-      name: _alignedText(name, .centerLeft, style: indented || percentOnly ? null : _bodyBold),
-      serving: _measureCell(
-        percentOnly ? '' : serving.quantityText(),
-        serving.percentOf(daily),
-        percentOnly,
+      name: Align(
+        alignment: .centerLeft,
+        child: Text(name, style: indented || percentOnly ? null : _bodyBold),
       ),
-      recipe: _measureCell(
-        percentOnly ? '' : recipe.quantityText(),
-        recipe.percentOf(daily),
-        percentOnly,
-      ),
+      serving: cell(serving),
+      recipe: cell(recipe),
     ),
   );
 }
@@ -289,18 +288,6 @@ List<Widget> _factCells({
   ];
 }
 
-Widget _measureCell(String amount, String percent, bool percentOnly) {
-  if (percentOnly) return _alignedText(percent, .centerRight, style: _bodyBold);
-  return _AmountPair(amount: amount, percent: percent);
-}
-
-Widget _alignedText(String text, Alignment alignment, {TextStyle? style}) {
-  return Align(
-    alignment: alignment,
-    child: Text(text, maxLines: 1, softWrap: false, overflow: .clip, style: style),
-  );
-}
-
 class _HeadingCell extends StatelessWidget {
   const new(this.label, {this.paddingLeft = 3});
 
@@ -313,14 +300,7 @@ class _HeadingCell extends StatelessWidget {
       height: 16,
       child: Padding(
         padding: .fromLTRB(paddingLeft, 4, 3, 1),
-        child: Text(
-          label,
-          textAlign: .center,
-          maxLines: 1,
-          softWrap: false,
-          overflow: .clip,
-          style: _headerStyle,
-        ),
+        child: Text(label, textAlign: .center, style: _headerStyle),
       ),
     );
   }
@@ -349,34 +329,6 @@ class _FactCell extends StatelessWidget {
           crossAxisAlignment: .stretch,
           children: [SizedBox(height: lineHeight, child: child)],
         ),
-      ),
-    );
-  }
-}
-
-class _AmountPair extends StatelessWidget {
-  const new({required this.amount, required this.percent});
-
-  final String amount;
-  final String percent;
-
-  @override
-  Widget build(BuildContext context) {
-    return ClipRect(
-      child: Stack(
-        children: [
-          Padding(
-            padding: const .only(left: 2),
-            child: Align(
-              alignment: .centerLeft,
-              child: Text(amount, maxLines: 1, softWrap: false, overflow: .clip),
-            ),
-          ),
-          Align(
-            alignment: .centerRight,
-            child: Text(percent, maxLines: 1, softWrap: false, overflow: .clip, style: _bodyBold),
-          ),
-        ],
       ),
     );
   }

@@ -220,7 +220,7 @@ extension type Recipes(List<Recipe> _recipes) implements Iterable<Recipe> {
 
 late final Ingredients ingredients;
 late final Recipes recipes;
-late final Map<String, String> dailyValues;
+late final Map<String, Measure> dailyValues;
 
 List<String> get meals {
   final names = <String>[];
@@ -243,9 +243,7 @@ Future<void> loadCatalog() async {
 }
 
 YamlMap _asMap(Object? document) {
-  if (document is! YamlMap) {
-    throw const FormatException('Expected a YAML map');
-  }
+  if (document is! YamlMap) throw const FormatException('Expected a YAML map');
   return document;
 }
 
@@ -273,8 +271,8 @@ Map<String, Ingredient> _parseIngredients(YamlMap document) {
   return ingredients;
 }
 
-Map<String, String> _parseDailyValues(YamlMap document) {
-  final measurements = <String, String>{};
+Map<String, Measure> _parseDailyValues(YamlMap document) {
+  final measurements = <String, Measure>{};
   for (final key in document.keys) {
     if (key is! String) {
       throw FormatException('Expected a nutrient name, got $key');
@@ -285,7 +283,7 @@ Map<String, String> _parseDailyValues(YamlMap document) {
     if (unit == null || unit == 'Cal') {
       throw FormatException('Expected a mass for $key');
     }
-    measurements[key] = _measurementString(raw, key);
+    measurements[key] = Measure.parse(_measurementString(raw, key));
   }
   return measurements;
 }
