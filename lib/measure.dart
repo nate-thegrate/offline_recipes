@@ -46,7 +46,7 @@ class Measure {
 
   String percentOf(Measure daily) => '${((this / daily) * 100).round()}%';
 
-  String quantityText() => '${labelAmount(amount)}${unit.name.short}';
+  String get quantityText => '${labelAmount(amount)}${unit.name.short}';
 }
 
 class ParsedAmount {

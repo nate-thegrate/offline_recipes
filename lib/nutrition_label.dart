@@ -248,7 +248,7 @@ TableRow _nutrientRow({
     );
     if (percentOnly) return percent;
 
-    final quantity = Positioned(left: 2, child: Text(measure.quantityText()));
+    final quantity = Positioned(left: 2, child: Text(measure.quantityText));
     return Stack(alignment: .centerLeft, children: [quantity, percent]);
   }
 
@@ -277,14 +277,11 @@ List<Widget> _factCells({
   double nameIndent = 0,
 }) {
   return [
-    _FactCell(
-      paddingLeft: 3 + nameIndent,
-      lineHeight: lineHeight,
-      rowHeight: rowHeight,
-      child: name,
-    ),
-    _FactCell(paddingLeft: 3, lineHeight: lineHeight, rowHeight: rowHeight, child: serving),
-    _FactCell(paddingLeft: 5, lineHeight: lineHeight, rowHeight: rowHeight, child: recipe),
+    for (final (widget, leftPadding) in [(name, nameIndent), (serving, 0.0), (recipe, 2.0)])
+      Padding(
+        padding: .fromLTRB(3 + leftPadding, 2, 3, rowHeight - lineHeight - 2),
+        child: SizedBox(height: lineHeight, child: widget),
+      ),
   ];
 }
 
@@ -301,34 +298,6 @@ class _HeadingCell extends StatelessWidget {
       child: Padding(
         padding: .fromLTRB(paddingLeft, 4, 3, 1),
         child: Text(label, textAlign: .center, style: _headerStyle),
-      ),
-    );
-  }
-}
-
-class _FactCell extends StatelessWidget {
-  const new({
-    required this.paddingLeft,
-    required this.lineHeight,
-    required this.rowHeight,
-    required this.child,
-  });
-
-  final double paddingLeft;
-  final double lineHeight;
-  final double rowHeight;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: rowHeight,
-      child: Padding(
-        padding: .fromLTRB(paddingLeft, 2, 3, 0),
-        child: Column(
-          crossAxisAlignment: .stretch,
-          children: [SizedBox(height: lineHeight, child: child)],
-        ),
       ),
     );
   }

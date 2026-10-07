@@ -63,11 +63,13 @@ void main() {
     _expectMeasured(lines, 'Protein', '1 g', recipe.servings);
 
     final fat = lines.singleWhere((line) => line.name == 'Total Fat');
+    final protein = lines.singleWhere((line) => line.name == 'Protein');
     expect(
       lines.singleWhere((line) => line.name == 'Saturated Fat').nameInset,
       greaterThan(fat.nameInset),
     );
-    expect(lines.singleWhere((line) => line.name == 'Protein').height, greaterThan(fat.height));
+    expect(protein.height, greaterThan(fat.height));
+    expect(protein.nameTop, fat.nameTop);
 
     final vitamins = await _labelRows(tester, label.vitamins);
     final vitaminLine = vitamins.singleWhere((line) => line.name == vitamin);
@@ -120,6 +122,7 @@ typedef _LabelRow = ({
   List<String> recipe,
   double nameInset,
   double height,
+  double nameTop,
 });
 
 ({Recipe recipe, String vitamin}) _labeledSample() {
@@ -160,8 +163,8 @@ void _expectMeasured(List<_LabelRow> lines, String name, String measurement, dou
   final daily = dailyValues[name]!;
   final serving = total.perServing(servings);
   final line = lines.singleWhere((line) => line.name == name);
-  expect(line.serving, [serving.quantityText(), serving.percentOf(daily)], reason: name);
-  expect(line.recipe, [total.quantityText(), total.percentOf(daily)], reason: name);
+  expect(line.serving, [serving.quantityText, serving.percentOf(daily)], reason: name);
+  expect(line.recipe, [total.quantityText, total.percentOf(daily)], reason: name);
 }
 
 Future<List<_LabelRow>> _labelRows(WidgetTester tester, List<TableRow> rows) async {
@@ -171,13 +174,14 @@ Future<List<_LabelRow>> _labelRows(WidgetTester tester, List<TableRow> rows) asy
       child: SingleChildScrollView(child: Table(children: rows)),
     ),
   );
-  final cells = find.descendant(of: find.byType(Table), matching: find.byType(Column));
+  final cells = find.descendant(of: find.byType(Table), matching: find.byType(Padding));
   final result = <_LabelRow>[];
   final cellCount = cells.evaluate().length;
   for (var index = 0; index < cellCount; index += 3) {
     final name = cells.at(index);
+    final nameText = find.descendant(of: name, matching: find.byType(Text));
     result.add((
-      name: _strings(tester, find.descendant(of: name, matching: find.byType(Text))).single,
+      name: _strings(tester, nameText).single,
       serving: _strings(
         tester,
         find.descendant(of: cells.at(index + 1), matching: find.byType(Text)),
@@ -186,8 +190,9 @@ Future<List<_LabelRow>> _labelRows(WidgetTester tester, List<TableRow> rows) asy
         tester,
         find.descendant(of: cells.at(index + 2), matching: find.byType(Text)),
       ),
-      nameInset: _leftInset(tester, find.ancestor(of: name, matching: find.byType(Padding))),
-      height: _rowHeight(tester, find.ancestor(of: name, matching: find.byType(SizedBox))),
+      nameInset: _leftInset(tester, name),
+      height: tester.getSize(name).height,
+      nameTop: tester.getTopLeft(nameText).dy - tester.getTopLeft(name).dy,
     ));
   }
   return result;
@@ -200,8 +205,4 @@ List<String> _strings(WidgetTester tester, Finder finder) => [
 double _leftInset(WidgetTester tester, Finder finder) {
   final padding = tester.widget<Padding>(finder).padding;
   return (padding as EdgeInsets).left;
-}
-
-double _rowHeight(WidgetTester tester, Finder finder) {
-  return tester.firstWidget<SizedBox>(finder).height!;
 }
