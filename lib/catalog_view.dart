@@ -210,15 +210,40 @@ class SelectedRecipe extends SignalWidget {
   }
 }
 
-class RecipeDetail extends StatelessWidget {
+class RecipeDetail extends SignalStatefulWidget {
   const new({required this.recipe, required this.showTitle, super.key});
 
   final Recipe recipe;
   final bool showTitle;
 
   @override
+  State<RecipeDetail> createState() => _RecipeDetailState();
+}
+
+class _RecipeDetailState extends State<RecipeDetail> {
+  final _checked = setSignal(<int>{});
+
+  @override
+  void didUpdateWidget(RecipeDetail oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.recipe != widget.recipe) _checked.clear();
+  }
+
+  void _toggleIngredient(int index, bool? selected) {
+    if (selected ?? false) {
+      _checked.add(index);
+    } else {
+      _checked.remove(index);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final RecipeDetail(:recipe, :showTitle) = widget;
     final textTheme = TextTheme.of(context);
+    final quiet = Theme.of(context)
+        .copyWith(splashFactory: NoSplash.splashFactory, highlightColor: Colors.transparent);
+    final faded = TextStyle(color: ColorScheme.of(context).onSurface.withValues(alpha: 0.5));
     String? previousGroup;
     final children = <Widget>[
       if (showTitle) ...[
@@ -226,30 +251,31 @@ class RecipeDetail extends StatelessWidget {
         const SizedBox(height: 8),
       ],
       Text(recipeSubtitle(recipe), style: textTheme.bodyMedium),
-      if (recipe.isPriced) ...[
-        const SizedBox(height: 16),
-        _PriceSummary(recipe: recipe),
-        const SizedBox(height: 16),
-        NutritionLabel(recipe),
-      ],
       const SizedBox(height: 24),
       Text('Ingredients', style: textTheme.titleMedium),
       const SizedBox(height: 8),
-      for (final RecipeLine(:group, :text) in recipe.lines) ...[
+      for (final (index, RecipeLine(:group, :text)) in recipe.lines.indexed) ...[
         if (group != previousGroup)
           if (previousGroup = group case final group?)
             Padding(
               padding: const .only(top: 8, bottom: 4),
               child: Text(titleCase(group), style: textTheme.titleSmall),
             ),
-        Padding(
-          padding: const .only(bottom: 6),
-          child: Row(
-            crossAxisAlignment: .start,
-            children: [
-              const Padding(padding: .only(top: 8, right: 10), child: Icon(Icons.circle, size: 6)),
-              Expanded(child: Text(text)),
-            ],
+        Theme(
+          data: quiet,
+          child: CheckboxListTile(
+            key: ValueKey('ingredient-$index'),
+            value: _checked.contains(index),
+            onChanged: (selected) => _toggleIngredient(index, selected),
+            overlayColor: .all(Colors.transparent),
+            controlAffinity: .leading,
+            contentPadding: .zero,
+            visualDensity: .compact,
+            dense: true,
+            horizontalTitleGap: 4,
+            minVerticalPadding: 0,
+            titleAlignment: .top,
+            title: Text(text, style: _checked.contains(index) ? faded : null),
           ),
         ),
       ],
@@ -267,6 +293,12 @@ class RecipeDetail extends StatelessWidget {
             ],
           ),
         ),
+      if (recipe.isPriced) ...[
+        const SizedBox(height: 12),
+        _PriceSummary(recipe: recipe),
+        const SizedBox(height: 16),
+        NutritionLabel(recipe),
+      ],
     ];
 
     return ListView(

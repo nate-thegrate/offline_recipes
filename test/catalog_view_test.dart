@@ -53,6 +53,45 @@ void main() {
 
     final detail = find.byKey(const ValueKey('recipe-detail'));
     expect(find.text('Test Soup'), findsOneWidget);
+    expect(find.text('Ingredients'), findsOneWidget);
+    expect(find.text('Soup'), findsOneWidget);
+    expect(find.text('1 cup broth'), findsOneWidget);
+    expect(find.text('1 cup extra (optional)'), findsOneWidget);
+    expect(find.byType(Checkbox), findsNWidgets(priced.lines.length));
+    expect(
+      tester.widgetList<Checkbox>(find.byType(Checkbox)).map((box) => box.value),
+      everyElement(isFalse),
+    );
+
+    await tester.tap(find.text('1 cup broth'));
+    await tester.pumpAndSettle();
+    expect(tester.widget<Checkbox>(find.byType(Checkbox).first).value, isTrue);
+    expect(tester.widget<Checkbox>(find.byType(Checkbox).last).value, isFalse);
+
+    await tester.tap(find.text('1 cup broth'));
+    await tester.pumpAndSettle();
+    expect(
+      tester.widgetList<Checkbox>(find.byType(Checkbox)).map((box) => box.value),
+      everyElement(isFalse),
+    );
+
+    await tester.tap(find.text('1 cup broth'));
+    await tester.pumpAndSettle();
+    expect(tester.widget<Checkbox>(find.byType(Checkbox).first).value, isTrue);
+    final checkedColor = _ingredientColor(tester, '1 cup broth');
+    final plainColor = _ingredientColor(tester, '1 cup extra (optional)');
+    expect(checkedColor.a, lessThan(plainColor.a));
+    expect(checkedColor.withValues(alpha: plainColor.a), plainColor);
+
+    await tester.scrollUntilVisible(find.text('Nutrition Facts'), 400, scrollable: _detailScroll);
+    expect(
+      tester.getTopLeft(find.text('Directions')).dy,
+      lessThan(tester.getTopLeft(find.text(priced.servingPrice.toString())).dy),
+    );
+    expect(
+      tester.getTopLeft(find.text(priced.totalPrice.toString())).dy,
+      lessThan(tester.getTopLeft(find.text('Nutrition Facts')).dy),
+    );
     expect(
       find.descendant(of: detail, matching: find.text(priced.servingPrice.toString())),
       findsOneWidget,
@@ -66,11 +105,6 @@ void main() {
     final label = NutritionLabel(priced);
     expect(find.descendant(of: detail, matching: find.text(label.servingCalories)), findsOneWidget);
     expect(find.descendant(of: detail, matching: find.text(label.recipeCalories)), findsOneWidget);
-
-    await tester.scrollUntilVisible(find.text('Soup'), 400, scrollable: _detailScroll);
-    expect(find.text('Soup'), findsOneWidget);
-    expect(find.text('1 cup broth'), findsOneWidget);
-    expect(find.text('1 cup extra (optional)'), findsOneWidget);
     await tester.scrollUntilVisible(
       find.textContaining('except for the oil'),
       400,
@@ -114,6 +148,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Test Salad'), findsOneWidget);
+    expect(tester.widget<Checkbox>(find.byType(Checkbox)).value, isFalse);
+    expect(_ingredientColor(tester, '1 cup broth'), plainColor);
     expect(find.text('Nutrition Facts'), findsNothing);
     expect(
       find.descendant(
@@ -272,6 +308,12 @@ String _selectiveTag() {
     if (recipes.any((recipe) => !recipe.tags.contains(name))) return name;
   }
   return tags.first;
+}
+
+Color _ingredientColor(WidgetTester tester, String text) {
+  final finder = find.text(text);
+  final style = tester.widget<Text>(finder).style;
+  return style?.color ?? DefaultTextStyle.of(tester.element(finder)).style.color!;
 }
 
 ListTile _tile(WidgetTester tester, String name) {
