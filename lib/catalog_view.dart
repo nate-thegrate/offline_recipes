@@ -3,6 +3,7 @@ import 'package:signal_widgets/signal_widgets.dart';
 
 import 'catalog.dart';
 import 'food.dart';
+import 'nutrition_label.dart';
 
 final meal = signal<String?>(null);
 final query = signal('');
@@ -228,15 +229,8 @@ class RecipeDetail extends StatelessWidget {
       if (recipe.isPriced) ...[
         const SizedBox(height: 16),
         _PriceSummary(recipe: recipe),
-        const SizedBox(height: 8),
-        Text(
-          'Percent of a ${formatCalories(dailyValues.calories)} diet',
-          style: textTheme.bodySmall,
-        ),
         const SizedBox(height: 16),
-        Text(recipe.servingsSpecified ? 'Each serving' : 'Recipe', style: textTheme.titleSmall),
-        const SizedBox(height: 4),
-        _NutrientList(recipe: recipe),
+        NutritionLabel(recipe),
       ],
       const SizedBox(height: 24),
       Text('Ingredients', style: textTheme.titleMedium),
@@ -291,27 +285,15 @@ class _PriceSummary extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (!recipe.servingsSpecified) {
-      return _Stat(
-        label: 'Recipe',
-        price: recipe.totalPrice,
-        calories: recipe.totalNutrition.calories,
-      );
+      return _Stat(label: 'Recipe', price: recipe.totalPrice);
     }
     return Row(
       children: [
         Expanded(
-          child: _Stat(
-            label: 'Per serving',
-            price: recipe.servingPrice,
-            calories: recipe.servingNutrition.calories,
-          ),
+          child: _Stat(label: 'Per serving', price: recipe.servingPrice),
         ),
         Expanded(
-          child: _Stat(
-            label: 'Whole recipe',
-            price: recipe.totalPrice,
-            calories: recipe.totalNutrition.calories,
-          ),
+          child: _Stat(label: 'Whole recipe', price: recipe.totalPrice),
         ),
       ],
     );
@@ -319,11 +301,10 @@ class _PriceSummary extends StatelessWidget {
 }
 
 class _Stat extends StatelessWidget {
-  const new({required this.label, required this.price, required this.calories});
+  const new({required this.label, required this.price});
 
   final String label;
   final Price price;
-  final double calories;
 
   @override
   Widget build(BuildContext context) {
@@ -334,75 +315,8 @@ class _Stat extends StatelessWidget {
         Text(label, style: theme.textTheme.labelLarge),
         const SizedBox(height: 4),
         Text(price.toString(), style: theme.textTheme.headlineSmall),
-        Text(formatCalories(calories)),
       ],
     );
-  }
-}
-
-class _NutrientList extends StatelessWidget {
-  const new({required this.recipe});
-
-  final Recipe recipe;
-
-  @override
-  Widget build(BuildContext context) {
-    final facts = recipe.servingsSpecified ? recipe.servingNutrition : recipe.totalNutrition;
-    final names = <String>[
-      for (final name in dailyValues.names)
-        if (name != 'Calories' && (facts.grams[name] ?? 0) > 0) name,
-    ];
-    for (final name in facts.grams.keys) {
-      final grams = facts.grams[name] ?? 0;
-      if (grams > 0 && !names.contains(name)) names.add(name);
-    }
-    return Column(
-      children: [
-        for (final name in names)
-          if (_nutrientLabel(facts.grams[name]!, _unitFor(name, facts.grams[name]!))
-              case final label?)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              child: Row(
-                children: [
-                  Expanded(child: Text(name)),
-                  Text(label),
-                  SizedBox(
-                    width: 52,
-                    child: Text(
-                      _percent(facts.grams[name]!, dailyValues.amounts[name]?.grams),
-                      textAlign: .end,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-      ],
-    );
-  }
-
-  String _unitFor(String name, double grams) {
-    final labeled = dailyValues.amounts[name]?.unitLabel;
-    if (labeled != null) return labeled;
-    if (grams >= 1) return 'g';
-    if (grams >= 0.001) return 'mg';
-    return '\u00B5g';
-  }
-
-  String? _nutrientLabel(double grams, String unitLabel) {
-    final value = switch (unitLabel) {
-      'mg' => grams * 1000,
-      '\u00B5g' => grams * 1000000,
-      _ => grams,
-    };
-    final number = _formatDecimal(value);
-    if (number == '0') return null;
-    return '$number $unitLabel';
-  }
-
-  String _percent(double grams, double? dailyGrams) {
-    if (dailyGrams == null || dailyGrams == 0) return '';
-    return '${(grams / dailyGrams * 100).round()}%';
   }
 }
 
@@ -431,27 +345,9 @@ String titleCase(String text) {
       .join(' ');
 }
 
-String formatCalories(double calories) {
-  if (calories.abs() >= 10) return '${calories.round()} Cal';
-  final text = calories.toStringAsFixed(1);
-  final number = text.endsWith('.0') ? text.substring(0, text.length - 2) : text;
-  return '$number Cal';
-}
-
 String _formatCount(double value) {
   if (value == value.roundToDouble()) return value.toStringAsFixed(0);
   return value.toString();
-}
-
-String _formatDecimal(double value) {
-  final places = value.abs() >= 100 ? 0 : (value.abs() >= 10 ? 1 : 2);
-  var text = value.toStringAsFixed(places);
-  if (text.contains('.')) {
-    text = text.replaceFirst(RegExp(r'0+$'), '');
-    text = text.replaceFirst(RegExp(r'\.$'), '');
-  }
-  if (text == '-0') return '0';
-  return text;
 }
 
 TextSpan _directionSpan(String source) {

@@ -72,6 +72,24 @@ sealed class Unit {
 
   const new _(this.name);
 
+  /// "oz" and "ounce" are the weight ounce.
+  factory fromName(String raw) {
+    final match = matchLeading(raw.trim());
+    if (match == null || match.rest.isNotEmpty) {
+      throw FormatException('Unknown unit: $raw');
+    }
+    return match.unit;
+  }
+
+  static ({Unit unit, String rest})? matchLeading(String text) {
+    final folded = text.replaceAll('\u03BC', '\u00B5');
+    for (final spelling in _unitSpellings) {
+      if (!_hasSpellingPrefix(folded, spelling)) continue;
+      return (unit: spelling.unit, rest: text.substring(spelling.text.length).trim());
+    }
+    return null;
+  }
+
   final UnitName name;
 
   double get inGrams;
@@ -88,6 +106,11 @@ sealed class Unit {
     UnitName('mg', full: 'milligram', fullPlural: 'milligrams'),
     baseUnit: g,
     unitsPerBaseUnit: 1000.0,
+  );
+  static const mcg = Unit(
+    UnitName('\u00B5g', full: 'microgram', fullPlural: 'micrograms', superShort: 'mcg'),
+    baseUnit: g,
+    unitsPerBaseUnit: 1000000.0,
   );
 
   static const lb = BaseUnit(
@@ -124,7 +147,7 @@ sealed class Unit {
     unitsPerBaseUnit: 3.0,
   );
   static const flOz = Unit(
-    UnitName('fl. oz', full: 'fluid ounce', fullPlural: 'fluid ounces', superShort: 'oz'),
+    UnitName('fl. oz', full: 'fluid ounce', fullPlural: 'fluid ounces'),
     baseUnit: cup,
     unitsPerBaseUnit: 8.0,
   );
@@ -163,4 +186,54 @@ class BaseUnit extends Unit {
 
   @override
   final double inMilliliters;
+}
+
+class _UnitSpelling {
+  const new(this.text, this.unit, {required this.caseSensitive});
+
+  final String text;
+  final Unit unit;
+  final bool caseSensitive;
+}
+
+final List<_UnitSpelling> _unitSpellings = _buildUnitSpellings();
+
+List<_UnitSpelling> _buildUnitSpellings() {
+  const units = <Unit>[.mcg, .mg, .g, .oz, .lb, .ml, .liter, .tsp, .tbsp, .flOz, .cup];
+  final spellings = <_UnitSpelling>[];
+  void add(String text, Unit unit) {
+    if (text.isEmpty) return;
+    final caseSensitive = text.length == 1;
+    for (final existing in spellings) {
+      final sameText = caseSensitive
+          ? existing.text == text
+          : existing.text.toLowerCase() == text.toLowerCase();
+      if (!sameText) continue;
+      return;
+    }
+    spellings.add(_UnitSpelling(text, unit, caseSensitive: caseSensitive));
+  }
+
+  for (final unit in units) {
+    final UnitName(:fullPlural, :full, :plural, :short, :superShort) = unit.name;
+    add(fullPlural, unit);
+    add(full, unit);
+    add(plural, unit);
+    add(short, unit);
+    add(superShort, unit);
+  }
+  spellings.sort((a, b) => b.text.length.compareTo(a.text.length));
+  return spellings;
+}
+
+bool _hasSpellingPrefix(String text, _UnitSpelling spelling) {
+  final alias = spelling.text;
+  if (text.length < alias.length) return false;
+  final head = text.substring(0, alias.length);
+  final matches = spelling.caseSensitive
+      ? head == alias
+      : head.toLowerCase() == alias.toLowerCase();
+  if (!matches) return false;
+  if (text.length == alias.length) return true;
+  return text[alias.length].trim().isEmpty;
 }

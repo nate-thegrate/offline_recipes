@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:offline_recipes/catalog.dart';
 import 'package:offline_recipes/food.dart';
-import 'package:offline_recipes/quantity.dart';
+import 'package:offline_recipes/measure.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -22,12 +22,12 @@ void main() {
     final flour = ingredients['whole wheat flour'];
     expect(flour.servingSize.unit, Unit.cup);
 
-    final cup = flour.used(Quantity(1.0, Unit.cup))!;
-    final spoons = flour.used(Quantity(16.0, Unit.tbsp))!;
+    final cup = flour.used(Measure(1.0, Unit.cup))!;
+    final spoons = flour.used(Measure(16.0, Unit.tbsp))!;
 
     expect(spoons.totalPrice.dollars, cup.totalPrice.dollars);
     expect(spoons.totalNutrition.calories, cup.totalNutrition.calories);
-    expect(flour.used(Quantity(100.0, Unit.g))!.servings, 100 / Unit.cup.inGrams);
+    expect(flour.used(Measure(100.0, Unit.g))!.servings, 100 / Unit.cup.inGrams);
   });
 
   test('a mixed tablespoon amount scales from the pantry serving', () {
@@ -70,7 +70,7 @@ void main() {
     final line = recipes['red velvet cake'].lines.firstWhere(
       (item) => item.text == '16 oz plant-based cream cheese',
     );
-    final ounces = Quantity(16.0, Unit.oz);
+    final ounces = Measure(16.0, Unit.oz);
 
     expect(line.food!.servings, ounces.grams / creamCheese.servingSize.grams);
     expect(creamCheese.used(creamCheese.servingSize)!.servings, 1);
@@ -131,12 +131,12 @@ void main() {
 
     final ingredient = Ingredient(
       name: 'test flour',
-      servingSize: Quantity(1.0, Unit.cup),
+      servingSize: Measure(1.0, Unit.cup),
       servings: 10.0,
       totalPrice: const Price(10.0),
       servingNutrition: const NutritionFacts(calories: 100.0, grams: {'Total Fat': 1.0}),
     );
-    final used = ingredient.used(Quantity(1.0, Unit.cup))!;
+    final used = ingredient.used(Measure(1.0, Unit.cup))!;
     final recipe = Recipe(
       name: 'test',
       meals: const ['side dish'],
@@ -159,12 +159,12 @@ void main() {
   test('optional lines and disabled recipes do not invent a total', () {
     final ingredient = Ingredient(
       name: 'test flour',
-      servingSize: Quantity(1.0, Unit.cup),
+      servingSize: Measure(1.0, Unit.cup),
       servings: 10.0,
       totalPrice: const Price(10.0),
       servingNutrition: const NutritionFacts(calories: 100.0, grams: {'Total Fat': 1.0}),
     );
-    final used = ingredient.used(Quantity(1.0, Unit.cup))!;
+    final used = ingredient.used(Measure(1.0, Unit.cup))!;
     final recipe = Recipe(
       name: 'test',
       meals: const ['side dish'],
@@ -225,14 +225,5 @@ void main() {
       expect(recipe.lines, isNotEmpty, reason: recipe.name);
       expect(recipe.directions, isNotEmpty, reason: recipe.name);
     }
-  });
-
-  test('daily values keep the units they were written in', () {
-    expect(dailyValues.names.first, 'Calories');
-    expect(dailyValues.calories, greaterThan(0));
-    expect(dailyValues.amounts['Total Fat']!.unitLabel, 'g');
-    expect(dailyValues.amounts['Sodium']!.unitLabel, 'mg');
-    expect(dailyValues.amounts['Vitamin A']!.unitLabel, '\u00B5g');
-    expect(dailyValues.amounts.containsKey('Calories'), isFalse);
   });
 }

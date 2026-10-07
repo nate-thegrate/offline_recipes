@@ -1,11 +1,19 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:offline_recipes/food.dart';
+import 'package:offline_recipes/measure.dart';
 
 void main() {
   test('one milligram weighs a thousandth of a gram', () {
     expect(Unit.mg.inGrams, 0.001);
     expect(Unit.mg.inMilliliters, Unit.mg.inGrams);
     expect(Unit.mg.measuresMass, isTrue);
+  });
+
+  test('one microgram weighs a millionth of a gram', () {
+    expect(Unit.mcg.inGrams, 0.000001);
+    expect(Unit.mcg.inMilliliters, Unit.mcg.inGrams);
+    expect(Unit.mcg.measuresMass, isTrue);
+    expect(Unit.mg.inGrams, 1000 * Unit.mcg.inGrams);
   });
 
   test('sixteen ounces weigh one pound', () {
@@ -23,6 +31,21 @@ void main() {
     expect(Unit.flOz.inGrams, Unit.flOz.inMilliliters);
     expect(Unit.cup.measuresMass, isFalse);
     expect(Unit.flOz.measuresMass, isFalse);
+  });
+
+  test('a unit name has one meaning', () {
+    expect(Unit.fromName('oz'), Unit.oz);
+    expect(Unit.fromName('ounce'), Unit.oz);
+    expect(Unit.fromName('ounces'), Unit.oz);
+    expect(Unit.fromName('fl. oz'), Unit.flOz);
+    expect(Unit.fromName('fluid ounce'), Unit.flOz);
+    expect(Unit.fromName('fluid ounces'), Unit.flOz);
+    expect(Unit.fromName('\u03BCg'), Unit.mcg);
+    expect(Unit.fromName('\u00B5g'), Unit.mcg);
+    expect(Unit.fromName('T'), Unit.tbsp);
+    expect(Unit.fromName('t'), Unit.tsp);
+    expect(parseMeasure('16 oz').unit, Unit.oz);
+    expect(parseMeasure('1 fl. oz').unit, Unit.flOz);
   });
 
   test('cup fractions, milliliters, and liters are one volume', () {

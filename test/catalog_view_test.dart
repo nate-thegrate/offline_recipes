@@ -3,6 +3,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:offline_recipes/catalog.dart';
 import 'package:offline_recipes/catalog_view.dart';
 import 'package:offline_recipes/main.dart';
+import 'package:offline_recipes/nutrition_label.dart';
 
 void main() {
   setUpAll(() async {
@@ -38,13 +39,11 @@ void main() {
       find.descendant(of: detail, matching: find.text(iceCream.totalPrice.toString())),
       findsOneWidget,
     );
-    expect(
-      find.descendant(
-        of: detail,
-        matching: find.text(formatCalories(iceCream.servingNutrition.calories)),
-      ),
-      findsOneWidget,
-    );
+    expect(find.text('Nutrition Facts'), findsOneWidget);
+    expect(find.text('Percent of a 2000 Cal diet'), findsNothing);
+    final label = NutritionLabel(iceCream);
+    expect(find.descendant(of: detail, matching: find.text(label.servingCalories)), findsOneWidget);
+    expect(find.descendant(of: detail, matching: find.text(label.recipeCalories)), findsOneWidget);
     final detailScroll = find.descendant(of: detail, matching: find.byType(Scrollable));
     await tester.scrollUntilVisible(find.text('2 cups soy milk'), 300, scrollable: detailScroll);
     expect(find.text('2 cups soy milk'), findsOneWidget);
@@ -59,6 +58,7 @@ void main() {
     await tester.pumpAndSettle();
     await openRecipe(tester, 'guacamole');
     expect(find.text('3 avocados', skipOffstage: false), findsOneWidget);
+    expect(find.text('Nutrition Facts'), findsNothing);
     expect(
       find.descendant(
         of: find.byKey(const ValueKey('recipe-detail')),

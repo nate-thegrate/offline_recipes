@@ -2,7 +2,7 @@ import 'package:flutter/services.dart';
 import 'package:yaml/yaml.dart';
 
 import 'food.dart';
-import 'quantity.dart';
+import 'measure.dart';
 
 const _microgram = '\u00B5g';
 
@@ -20,21 +20,6 @@ const _ingredientAliases = <String, String>{
   'sourdough starter': 'whole wheat flour',
 };
 
-class MeasuredMass {
-  const new(this.grams, this.unitLabel);
-
-  final double grams;
-  final String unitLabel;
-}
-
-class DailyValues {
-  const new({required this.calories, required this.amounts, required this.names});
-
-  final double calories;
-  final Map<String, MeasuredMass> amounts;
-  final List<String> names;
-}
-
 class Ingredient implements Food {
   new({
     required this.name,
@@ -42,11 +27,12 @@ class Ingredient implements Food {
     required this.servings,
     required this.totalPrice,
     required this.servingNutrition,
+    this.measurementText = const {},
   }) : assert(servings > 0, 'A container needs at least one serving');
 
   @override
   final String name;
-  final Quantity servingSize;
+  final Measure servingSize;
   @override
   final double servings;
   @override
@@ -54,33 +40,36 @@ class Ingredient implements Food {
   @override
   final NutritionFacts servingNutrition;
 
+  /// Mass amounts as written in the catalog, in file order.
+  final Map<String, String> measurementText;
+
   @override
   Price get servingPrice => totalPrice / servings;
 
   @override
   NutritionFacts get totalNutrition => servingNutrition * servings;
 
-  IngredientAmount? used(Quantity quantity) {
-    final ratio = _servingsIn(quantity);
-    if (ratio != null && ratio.isFinite) return IngredientAmount(this, quantity, ratio);
+  IngredientAmount? used(Measure measure) {
+    final ratio = _servingsIn(measure);
+    if (ratio != null && ratio.isFinite) return IngredientAmount(this, measure, ratio);
     return null;
   }
 
   // Mass and volume agree while a serving has no measurement of its own.
-  double? _servingsIn(Quantity quantity) {
-    final alongMass = quantity.unit.measuresMass;
+  double? _servingsIn(Measure measure) {
+    final alongMass = measure.unit.measuresMass;
     final serving = alongMass ? servingSize.grams : servingSize.milliliters;
     if (serving == 0) return null;
-    final amount = alongMass ? quantity.grams : quantity.milliliters;
+    final amount = alongMass ? measure.grams : measure.milliliters;
     return amount / serving;
   }
 }
 
 class IngredientAmount implements Food {
-  const new(this.ingredient, this.quantity, this.servings);
+  const new(this.ingredient, this.measure, this.servings);
 
   final Ingredient ingredient;
-  final Quantity quantity;
+  final Measure measure;
 
   @override
   String get name => ingredient.name;
@@ -228,7 +217,7 @@ extension type Recipes(List<Recipe> _recipes) implements Iterable<Recipe> {
 
 late final Ingredients ingredients;
 late final Recipes recipes;
-late final DailyValues dailyValues;
+late final Map<String, String> dailyValues;
 
 List<String> get meals {
   final names = <String>[];
@@ -267,39 +256,35 @@ Map<String, Ingredient> _parseIngredients(YamlMap document) {
     if (value is! YamlMap) {
       throw FormatException('Expected data for $key');
     }
+    final nutrition = _parseNutrition(_map(value, 'nutrition facts'));
     final ingredient = Ingredient(
       name: key,
-      servingSize: parseQuantity(_string(value, 'serving size')),
+      servingSize: parseMeasure(_string(value, 'serving size')),
       servings: _number(value, 'servings per container'),
       totalPrice: Price(_number(value, 'container price')),
-      servingNutrition: _parseNutrition(_map(value, 'nutrition facts')),
+      servingNutrition: nutrition.facts,
+      measurementText: nutrition.measurements,
     );
     ingredients[key.toLowerCase()] = ingredient;
   }
   return ingredients;
 }
 
-DailyValues _parseDailyValues(YamlMap document) {
-  var calories = 0.0;
-  final amounts = <String, MeasuredMass>{};
-  final names = <String>[];
+Map<String, String> _parseDailyValues(YamlMap document) {
+  final measurements = <String, String>{};
   for (final key in document.keys) {
     if (key is! String) {
       throw FormatException('Expected a nutrient name, got $key');
     }
-    names.add(key);
-    final measurement = _measurement(document[key] as Object?, key);
-    if (key == 'Calories') {
-      calories = measurement.value;
-      continue;
-    }
-    final unit = measurement.unit;
+    if (key == 'Calories') continue;
+    final raw = document[key] as Object?;
+    final unit = _measurement(raw, key).unit;
     if (unit == null || unit == 'Cal') {
       throw FormatException('Expected a mass for $key');
     }
-    amounts[key] = MeasuredMass(_toGrams(measurement.value, unit), unit);
+    measurements[key] = _measurementString(raw, key);
   }
-  return DailyValues(calories: calories, amounts: amounts, names: names);
+  return measurements;
 }
 
 List<Recipe> _parseRecipes(YamlMap document, Map<String, Ingredient> ingredients) {
@@ -379,7 +364,7 @@ RecipeLine _line(String text, Map<String, Ingredient> ingredients, {String? grou
   final ignored = _ignoredIngredients.contains(_normalize(name));
   IngredientAmount? food;
   if (parsed != null && parsed.name.isNotEmpty) {
-    food = ingredients[_canonicalName(parsed.name)]?.used(parsed.quantity);
+    food = ingredients[_canonicalName(parsed.name)]?.used(parsed.measure);
   }
   return RecipeLine(
     text,
@@ -401,20 +386,20 @@ String _normalize(String name) {
 
 String _canonicalName(String name) => _ingredientAliases[_normalize(name)] ?? _normalize(name);
 
-NutritionFacts _parseNutrition(YamlMap document) {
+({NutritionFacts facts, Map<String, String> measurements}) _parseNutrition(YamlMap document) {
   var calories = 0.0;
   final grams = <String, double>{};
+  final measurements = <String, String>{};
   void add(String key, Object? value) {
     if (key == 'Vitamins') {
-      final vitamins = value;
-      if (vitamins is! YamlMap) {
+      if (value is! YamlMap) {
         throw const FormatException('Expected a vitamins map');
       }
-      for (final vitamin in vitamins.keys) {
+      for (final vitamin in value.keys) {
         if (vitamin is! String) {
           throw FormatException('Expected a vitamin name, got $vitamin');
         }
-        add(vitamin, vitamins[vitamin] as Object?);
+        add(vitamin, value[vitamin] as Object?);
       }
       return;
     }
@@ -427,6 +412,7 @@ NutritionFacts _parseNutrition(YamlMap document) {
     if (unit == null) {
       throw FormatException('Expected a unit for $key');
     }
+    measurements[key] = _measurementString(value, key);
     grams[key] = _toGrams(measurement.value, unit);
   }
 
@@ -436,7 +422,17 @@ NutritionFacts _parseNutrition(YamlMap document) {
     }
     add(key, document[key] as Object?);
   }
-  return NutritionFacts(calories: calories, grams: grams);
+  return (facts: NutritionFacts(calories: calories, grams: grams), measurements: measurements);
+}
+
+String _measurementString(Object? value, String label) {
+  if (value is String) return value.trim();
+  if (value is int) return '$value';
+  if (value is double) {
+    if (value == value.roundToDouble()) return value.toStringAsFixed(0);
+    return value.toString();
+  }
+  throw FormatException('Expected a measurement for $label');
 }
 
 ({double value, String? unit}) _measurement(Object? value, String label) {
