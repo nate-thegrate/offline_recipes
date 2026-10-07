@@ -171,10 +171,10 @@ void main() {
     expect(recipe.servingNutrition.calories, ingredient.servingNutrition.calories / 2);
   });
 
-  test('search matches the name, ingredients, and directions in the selected meal', () {
+  test('search matches the name, ingredients, and directions in the selected tag', () {
     final recipe = _recipe(
       name: 'cinnamon rolls',
-      meals: const ['breakfast'],
+      tags: const ['breakfast'],
       lines: const [RecipeLine('1 cup erythritol')],
       directions: const ['Cut with dental floss.'],
     );
@@ -209,14 +209,14 @@ Ingredient _ingredient({
 Recipe _recipe({
   required List<RecipeLine> lines,
   String name = 'test',
-  List<String> meals = const ['side dish'],
+  List<String> tags = const ['side dish'],
   double servings = 1,
   bool calculatesNutrition = true,
   List<String> directions = const ['Mix.'],
 }) {
   return Recipe(
     name: name,
-    meals: meals,
+    tags: tags,
     servings: servings,
     servingsSpecified: true,
     calculatesNutrition: calculatesNutrition,

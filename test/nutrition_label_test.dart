@@ -149,7 +149,7 @@ Recipe _recipeMeasuring(Map<String, String> measurements) {
   );
   return Recipe(
     name: 'sample',
-    meals: const ['side dish'],
+    tags: const ['side dish'],
     servings: 4,
     servingsSpecified: true,
     calculatesNutrition: true,

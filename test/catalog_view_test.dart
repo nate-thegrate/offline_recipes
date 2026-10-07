@@ -11,7 +11,7 @@ void main() {
   setUpAll(loadCatalog);
 
   setUp(() {
-    meal.value = null;
+    tag.value = null;
     query.value = '';
     selected.value = null;
   });
@@ -29,7 +29,7 @@ void main() {
     final used = ingredient.used(const Measure(1, Unit.cup))!;
     final priced = Recipe(
       name: 'test soup',
-      meals: const ['soup'],
+      tags: const ['soup'],
       servings: 2,
       servingsSpecified: true,
       calculatesNutrition: true,
@@ -99,7 +99,7 @@ void main() {
 
     final unpriced = Recipe(
       name: 'test salad',
-      meals: const ['side dish'],
+      tags: const ['side dish'],
       servings: 1,
       servingsSpecified: true,
       calculatesNutrition: false,
@@ -125,23 +125,37 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('meal filters and search show the recipes that match', (tester) async {
+  testWidgets('tag filters and search show the recipes that match', (tester) async {
     await tester.pumpWidget(const App());
     await tester.pumpAndSettle();
 
-    final mealName = _selectiveMeal();
-    await tester.tap(find.byKey(ValueKey('meal-$mealName')));
+    expect(
+      tester.widgetList<FilterChip>(find.byType(FilterChip)).map((chip) => chip.selected),
+      everyElement(isFalse),
+    );
+
+    final tagName = _selectiveTag();
+    await tester.tap(find.byKey(ValueKey('tag-$tagName')));
     await tester.pumpAndSettle();
 
-    final listed = recipes.where((recipe) => recipe.matches(mealName, '')).first;
+    final listed = recipes.where((recipe) => recipe.matches(tagName, '')).first;
     expect(find.byKey(ValueKey('recipe-${listed.name}')), findsOneWidget);
     for (final recipe in recipes) {
-      if (recipe.matches(mealName, '')) continue;
+      if (recipe.matches(tagName, '')) continue;
       expect(find.byKey(ValueKey('recipe-${recipe.name}')), findsNothing, reason: recipe.name);
     }
 
-    await tester.tap(find.byKey(const ValueKey('meal-all')));
+    final excluded = recipes.firstWhere((recipe) => !recipe.tags.contains(tagName));
+    await tester.tap(find.byKey(ValueKey('tag-$tagName')));
     await tester.pumpAndSettle();
+    expect(tester.widget<FilterChip>(find.byKey(ValueKey('tag-$tagName'))).selected, isFalse);
+    await tester.scrollUntilVisible(
+      find.byKey(ValueKey('recipe-${excluded.name}')),
+      400,
+      scrollable: _listScroll,
+    );
+    expect(find.byKey(ValueKey('recipe-${excluded.name}')), findsOneWidget);
+
     final shown = recipes.first;
     await tester.enterText(find.byKey(const ValueKey('recipe-search')), shown.name);
     await tester.pumpAndSettle();
@@ -253,11 +267,11 @@ void main() {
   });
 }
 
-String _selectiveMeal() {
-  for (final name in meals) {
-    if (recipes.any((recipe) => !recipe.meals.contains(name))) return name;
+String _selectiveTag() {
+  for (final name in tags) {
+    if (recipes.any((recipe) => !recipe.tags.contains(name))) return name;
   }
-  return meals.first;
+  return tags.first;
 }
 
 ListTile _tile(WidgetTester tester, String name) {

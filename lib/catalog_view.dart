@@ -5,7 +5,7 @@ import 'catalog.dart';
 import 'food.dart';
 import 'nutrition_label.dart';
 
-final meal = signal<String?>(null);
+final tag = signal<String?>(null);
 final query = signal('');
 final selected = signal<Recipe?>(null);
 
@@ -62,15 +62,15 @@ class RecipeBrowser extends StatelessWidget {
     return Column(
       crossAxisAlignment: .stretch,
       children: [
-        const MealFilters(),
+        const TagFilters(),
         Expanded(
           child: SignalBuilder(
             builder: (context) {
-              final mealName = meal.value;
+              final tagName = tag.value;
               final text = query.value;
               final matching = [
                 for (final recipe in recipes)
-                  if (recipe.matches(mealName, text)) recipe,
+                  if (recipe.matches(tagName, text)) recipe,
               ];
               if (matching.isEmpty) {
                 return const Center(child: Text('No recipes match.'));
@@ -172,24 +172,24 @@ class _RecipeSearchFieldState extends State<RecipeSearchField> {
   }
 }
 
-class MealFilters extends SignalWidget {
+class TagFilters extends SignalWidget {
   const new({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final current = meal.value;
+    final current = tag.value;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
       child: Wrap(
         spacing: 8,
         runSpacing: 8,
         children: [
-          for (final option in [null, ...meals])
+          for (final option in tags)
             FilterChip(
-              key: ValueKey(option == null ? 'meal-all' : 'meal-$option'),
-              label: Text(option == null ? 'All' : titleCase(option)),
+              key: ValueKey('tag-$option'),
+              label: Text(titleCase(option)),
               selected: current == option,
-              onSelected: (_) => meal.value = option,
+              onSelected: (selected) => tag.value = selected ? option : null,
             ),
         ],
       ),
@@ -321,7 +321,7 @@ class _Stat extends StatelessWidget {
 }
 
 String recipeSubtitle(Recipe recipe) {
-  final parts = <String>[recipe.meals.map(titleCase).join(', ')];
+  final parts = <String>[recipe.tags.map(titleCase).join(', ')];
   if (recipe.servingsSpecified) {
     final count = _formatCount(recipe.servings);
     final noun = recipe.servings == 1 ? 'serving' : 'servings';

@@ -47,24 +47,21 @@ class NutritionFacts {
   NutritionFacts operator /(double divisor) => this * (1 / divisor);
 }
 
-class Tag {
-  const new(this.short, {String? full}) : full = full ?? short;
-  final String short;
-  final String full;
-
-  @override
-  String toString() => full;
-}
-
-class UnitName extends Tag {
-  const new(super.short, {super.full, String? superShort, String? plural, String? fullPlural})
-    : superShort = superShort ?? short,
+class UnitName {
+  const new(this.short, {String? full, String? superShort, String? plural, String? fullPlural})
+    : full = full ?? short,
+      superShort = superShort ?? short,
       plural = plural ?? short,
       fullPlural = fullPlural ?? plural ?? full ?? short;
 
+  final String short;
+  final String full;
   final String superShort;
   final String plural;
   final String fullPlural;
+
+  @override
+  String toString() => full;
 }
 
 sealed class Unit {

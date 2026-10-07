@@ -1,5 +1,5 @@
 cornbread:
-  meal: side dish, bread
+  tags: side dish, bread
   servings: 6
   ingredients:
     - 1/2 cup oil
@@ -17,7 +17,7 @@ cornbread:
     - Serve hot, with honey or butter or whatever substitutes for those you wanna use.
 
 popcorn:
-  meal: side dish
+  tags: side dish
   servings: 3
   ingredients:
     - 1/2 cup popcorn
@@ -29,7 +29,7 @@ popcorn:
     - Add the popcorn and oil to your popcorn maker. Pop it, then pour into a bowl and season it with that powder.
 
 guacamole:
-  meal: side dish
+  tags: side dish
   calculate nutrition & price: false
   ingredients:
     - 3 avocados
@@ -45,7 +45,7 @@ guacamole:
     - Refrigerate for about an hour and serve.
 
 beans & rice:
-  meal: main dish
+  tags: main dish
   calculate nutrition & price: false
   ingredients:
     - 1 cup rice
@@ -62,7 +62,7 @@ beans & rice:
     - Mix in the beans and eat!
 
 fried rice:
-  meal: main dish
+  tags: main dish
   calculate nutrition & price: false
   ingredients:
     - 1 onion
@@ -84,7 +84,7 @@ fried rice:
     - Top with sliced green onion and serve.
 
 tofu curry:
-  meal: main dish
+  tags: main dish
   calculate nutrition & price: false
   ingredients:
     - 28 oz extra firm tofu
@@ -109,7 +109,7 @@ tofu curry:
     - Serve with rice.
 
 pancakes:
-  meal: breakfast
+  tags: breakfast
   servings: 3
   ingredients:
     - 1 cup water
@@ -125,7 +125,7 @@ pancakes:
     - Hopefully you know how to flip pancakes.
 
 waffles:
-  meal: breakfast
+  tags: breakfast
   servings: 3
   ingredients:
     - 1 cup water
@@ -140,7 +140,7 @@ waffles:
     - Mix everything in a bowl and cook as per your waffle maker's instructions.
 
 aebleskivers:
-  meal: breakfast
+  tags: breakfast
   servings: 3
   ingredients:
     - 1 1/2 cup water
@@ -155,7 +155,7 @@ aebleskivers:
     - Cook in an aebleskiver pan (add ~¼ teaspoon of oil to each divet before pouring the batter).
 
 crepes:
-  meal: breakfast
+  tags: breakfast
   servings: 2
   ingredients:
     - 1 1/4 cup water
@@ -170,7 +170,7 @@ crepes:
     - "Tip: don't cook both sides for the same amount of time: Cook for several minutes, then flip and cook the other side for about 30 seconds."
 
 french toast:
-  meal: breakfast
+  tags: breakfast
   calculate nutrition & price: false
   ingredients:
     - 1 cup soy milk
@@ -187,7 +187,7 @@ french toast:
     - Sprinkle cinnamon on the french toast right as it starts cooking for a nice boost to flavor & aesthetic.
 
 oatmeal:
-  meal: breakfast
+  tags: breakfast
   servings: 2
   ingredients:
     - 1 cup oats
@@ -201,7 +201,7 @@ oatmeal:
     - Mix and then microwave for 2 minutes, or to your satisfaction. Let it cool a little bit and then add fruit if you want.
 
 german pancakes:
-  meal: breakfast
+  tags: breakfast
   servings: 2
   ingredients:
     - 1 cup soy milk
@@ -217,7 +217,7 @@ german pancakes:
     - Mix other ingredients together and pour into pan. Bake for 20 minutes.
 
 lemon bars:
-  meal: dessert
+  tags: dessert
   calculate nutrition & price: false
   ingredients:
     - crust:
@@ -236,7 +236,7 @@ lemon bars:
     - Combine other ingredients and pour on top of crust; bake at 350°F for 20-25 min.
 
 oatmeal chocolate chip cookies:
-  meal: dessert
+  tags: dessert
   calculate nutrition & price: false
   ingredients:
     - 1 cup allulose
@@ -259,7 +259,7 @@ oatmeal chocolate chip cookies:
     - Bake at 375°F for 6 minutes and let cool.
 
 red velvet cake:
-  meal: dessert
+  tags: dessert
   servings: 24
   ingredients:
     - 2 cups allulose
@@ -286,7 +286,7 @@ red velvet cake:
     - Bake at 375°F for 30 minutes.
 
 ice cream:
-  meal: dessert
+  tags: dessert
   servings: 12
   ingredients:
     - 2 cups soy milk
@@ -308,7 +308,7 @@ ice cream:
     - Combine all ingredients, mix (preferably in a blender), and freeze (preferably in an ice cream maker).
 
 chili skillet:
-  meal: main dish
+  tags: main dish
   calculate nutrition & price: false
   ingredients:
     - 16 oz plant-based ground beef
@@ -330,7 +330,7 @@ chili skillet:
     - Sprinkle cheese on top if you'd like, and serve with tortilla chips.
 
 rice pudding:
-  meal: breakfast, dessert
+  tags: breakfast, dessert
   calculate nutrition & price: false
   ingredients:
     - 1 cup soy milk
@@ -344,7 +344,7 @@ rice pudding:
     - Mix oat fiber & soy milk together with a whisk. Then add everything to a pot and simmer for 10 min (or until desired consistency is reached).
 
 smoothie:
-  meal: breakfast, drink
+  tags: breakfast, drink
   calculate nutrition & price: false
   ingredients:
     - frozen strawberries (and/or other fruit, but IMO strawberries have the best healthy/tasty combo)
@@ -355,7 +355,7 @@ smoothie:
     - Blend it up 😎
 
 hot cocoa:
-  meal: drink
+  tags: drink
   servings: 2
   ingredients:
     - 2 cups soy milk
@@ -371,7 +371,7 @@ hot cocoa:
     - Then mix everything in and enjoy!
 
 sourdough bread:
-  meal: side dish, bread
+  tags: side dish, bread
   calculate nutrition & price: false
   ingredients:
     - 300 g water
@@ -389,7 +389,7 @@ sourdough bread:
     - It might be worth it to buy an electric knife, since sourdough has a hard crust that's difficult to slice through.
 
 pb & j:
-  meal: bread, main dish
+  tags: bread, main dish
   calculate nutrition & price: false
   ingredients:
     - bread
@@ -399,7 +399,7 @@ pb & j:
     - Adding this as a recipe since I keep forgetting that I can just make a PB&J when I'm hungry.
 
 vegan deli sandwich:
-  meal: bread, main dish
+  tags: bread, main dish
   calculate nutrition & price: false
   ingredients:
     - bread
@@ -415,7 +415,7 @@ vegan deli sandwich:
     - They made plant-based versions of sliced turkey, cheese, & mayo. You can literally just buy that stuff and then make a regular sandwich.
 
 sourdough sopapillas:
-  meal: breakfast, dessert, bread
+  tags: breakfast, dessert, bread
   calculate nutrition & price: false
   ingredients:
     - 300 g water
@@ -433,7 +433,7 @@ sourdough sopapillas:
     - Serve with honey, cinnamon-sugar, nutella, icing, jam, or even something savory if you'd like!
 
 strawberry lime jam:
-  meal: bread
+  tags: bread
   calculate nutrition & price: false
   ingredients:
     - strawberries
@@ -446,7 +446,7 @@ strawberry lime jam:
     - (Amounts aren't listed since it depends on personal preference, and there's usually no consistency in the amount of strawberries I'm working with.)
 
 raspberry jam:
-  meal: bread
+  tags: bread
   calculate nutrition & price: false
   ingredients:
     - raspberries
@@ -458,7 +458,7 @@ raspberry jam:
     - (Amounts aren't listed since it depends on personal preference, and there's usually no consistency in the amount of strawberries I'm working with.)
 
 sweet potato:
-  meal: main dish
+  tags: main dish
   calculate nutrition & price: false
   ingredients:
     - 1 sweet potato
@@ -468,7 +468,7 @@ sweet potato:
     - Put whatever you'd like on top. (I like cinnamon since it reminds me of Thanksgiving)
 
 chili:
-  meal: main dish, soup
+  tags: main dish, soup
   calculate nutrition & price: false
   ingredients:
     - 4 cups dry beans
@@ -487,7 +487,7 @@ chili:
     - Combine everything in a Crock Pot or insta-pot. Cook for who knows how long.
 
 winter vegetable soup:
-  meal: main dish, soup
+  tags: main dish, soup
   calculate nutrition & price: false
   ingredients:
     - 16 oz plant-based ground beef
@@ -508,7 +508,7 @@ winter vegetable soup:
     - Then add all other ingredients and bring to a boil. Simmer for 30 min.
 
 kale sausage soup:
-  meal: main dish, soup
+  tags: main dish, soup
   calculate nutrition & price: false
   ingredients:
     - 14 oz plant-based sausage
@@ -526,7 +526,7 @@ kale sausage soup:
     - Then add all other ingredients and bring to a boil. Simmer for 30 min.
 
 bean & spinach soup:
-  meal: main dish, soup
+  tags: main dish, soup
   calculate nutrition & price: false
   ingredients:
     - 1/8 cup oil
@@ -549,7 +549,7 @@ bean & spinach soup:
     - Stir in spinach and cook for another minute, then remove from heat and stir in lemon juice.
 
 italian sausage soup:
-  meal: main dish, soup
+  tags: main dish, soup
   calculate nutrition & price: false
   ingredients:
     - 14 oz plant-based sausage
@@ -565,7 +565,7 @@ italian sausage soup:
     - Simmer for 15 minutes or until the pasta is cooked.
 
 spaghetti:
-  meal: main dish
+  tags: main dish
   calculate nutrition & price: false
   ingredients:
     - Spaghetti noodles
@@ -575,7 +575,7 @@ spaghetti:
     - Hopefully you know how to cook spaghetti.
 
 bagels:
-  meal: breakfast, bread
+  tags: breakfast, bread
   servings: 8
   ingredients:
     - 1 cup water
@@ -597,7 +597,7 @@ bagels:
     - Let the bagels cool and serve however you like (e.g. by spreading plant-based sour cream or cream cheese on top).
 
 pizza:
-  meal: main dish, bread
+  tags: main dish, bread
   servings: 3
   ingredients:
     - 1 cup water
@@ -619,7 +619,7 @@ pizza:
     - Bake at 425°F for 12-15 minutes.
 
 dinner rolls:
-  meal: side dish, bread
+  tags: side dish, bread
   servings: 10
   ingredients:
     - 2 cups water
@@ -638,7 +638,7 @@ dinner rolls:
     - Let the rolls rise for 30-45 min. Then set oven to 350°F and bake for 20 min.
 
 roasted potatoes:
-  meal: side dish
+  tags: side dish
   calculate nutrition & price: false
   ingredients:
     - 8 potatoes
@@ -653,7 +653,7 @@ roasted potatoes:
     - Bake at 425°F for 20 min or until potatoes reach optimal crispiness.
 
 no-bake cookies:
-  meal: dessert
+  tags: dessert
   servings: 24
   ingredients:
     - 1/2 cup coconut oil
@@ -672,7 +672,7 @@ no-bake cookies:
     - Separate into individual cookie balls and let them cool on a cookie sheet for about 30 minutes.
 
 cinnamon rolls:
-  meal: breakfast, dessert, bread
+  tags: breakfast, dessert, bread
   servings: 24
   ingredients:
     - 2 cups water

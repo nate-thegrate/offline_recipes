@@ -106,7 +106,7 @@ class RecipeLine {
 class Recipe implements Food {
   new({
     required this.name,
-    required this.meals,
+    required this.tags,
     required this.servings,
     required this.servingsSpecified,
     required this.calculatesNutrition,
@@ -116,7 +116,7 @@ class Recipe implements Food {
 
   @override
   final String name;
-  final List<String> meals;
+  final List<String> tags;
   @override
   final double servings;
   final bool servingsSpecified;
@@ -140,8 +140,8 @@ class Recipe implements Food {
   @override
   NutritionFacts get servingNutrition => totalNutrition / servings;
 
-  bool matches(String? mealName, String query) {
-    if (mealName != null && !meals.contains(mealName)) return false;
+  bool matches(String? tag, String query) {
+    if (tag != null && !tags.contains(tag)) return false;
     final normalized = query.trim().toLowerCase();
     if (normalized.isEmpty) return true;
     return _searchText.contains(normalized);
@@ -180,10 +180,10 @@ class Recipe implements Food {
 
   String _searchableText() {
     final haystack = StringBuffer(name);
-    for (final mealName in meals) {
+    for (final tag in tags) {
       haystack
         ..write('\n')
-        ..write(mealName);
+        ..write(tag);
     }
     for (final line in lines) {
       haystack
@@ -222,10 +222,10 @@ late final Ingredients ingredients;
 late final Recipes recipes;
 late final Map<String, Measure> dailyValues;
 
-List<String> get meals {
+List<String> get tags {
   final names = <String>[];
   for (final recipe in recipes) {
-    for (final name in recipe.meals) {
+    for (final name in recipe.tags) {
       if (!names.contains(name)) names.add(name);
     }
   }
@@ -303,7 +303,7 @@ List<Recipe> _parseRecipes(YamlMap document, Map<String, Ingredient> ingredients
     recipes.add(
       Recipe(
         name: key,
-        meals: _meals(_string(value, 'meal')),
+        tags: _tags(_string(value, 'tags')),
         servings: servingsSpecified ? _asDouble(rawServings, '$key servings') : 1,
         servingsSpecified: servingsSpecified,
         calculatesNutrition: _calculates(value),
@@ -324,7 +324,7 @@ bool _calculates(YamlMap recipe) {
   return true;
 }
 
-List<String> _meals(String text) {
+List<String> _tags(String text) {
   return [
     for (final part in text.split(','))
       if (part.trim().isNotEmpty) part.trim(),
