@@ -210,40 +210,16 @@ class SelectedRecipe extends SignalWidget {
   }
 }
 
-class RecipeDetail extends SignalStatefulWidget {
+class RecipeDetail extends StatelessWidget {
   const new({required this.recipe, required this.showTitle, super.key});
 
   final Recipe recipe;
   final bool showTitle;
 
   @override
-  State<RecipeDetail> createState() => _RecipeDetailState();
-}
-
-class _RecipeDetailState extends State<RecipeDetail> {
-  final _checked = setSignal(<int>{});
-
-  @override
-  void didUpdateWidget(RecipeDetail oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.recipe != widget.recipe) _checked.clear();
-  }
-
-  void _toggleIngredient(int index, bool? selected) {
-    if (selected ?? false) {
-      _checked.add(index);
-    } else {
-      _checked.remove(index);
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final RecipeDetail(:recipe, :showTitle) = widget;
-    final textTheme = TextTheme.of(context);
-    final quiet = Theme.of(context)
-        .copyWith(splashFactory: NoSplash.splashFactory, highlightColor: Colors.transparent);
-    final faded = TextStyle(color: ColorScheme.of(context).onSurface.withValues(alpha: 0.5));
+    final theme = Theme.of(context);
+    final textTheme = theme.textTheme;
     String? previousGroup;
     final children = <Widget>[
       if (showTitle) ...[
@@ -261,23 +237,7 @@ class _RecipeDetailState extends State<RecipeDetail> {
               padding: const .only(top: 8, bottom: 4),
               child: Text(titleCase(group), style: textTheme.titleSmall),
             ),
-        Theme(
-          data: quiet,
-          child: CheckboxListTile(
-            key: ValueKey('ingredient-$index'),
-            value: _checked.contains(index),
-            onChanged: (selected) => _toggleIngredient(index, selected),
-            overlayColor: .all(Colors.transparent),
-            controlAffinity: .leading,
-            contentPadding: .zero,
-            visualDensity: .compact,
-            dense: true,
-            horizontalTitleGap: 4,
-            minVerticalPadding: 0,
-            titleAlignment: .top,
-            title: Text(text, style: _checked.contains(index) ? faded : null),
-          ),
-        ),
+        _IngredientTile(key: ValueKey('ingredient-$index'), text: text),
       ],
       const SizedBox(height: 18),
       Text('Directions', style: textTheme.titleMedium),
@@ -301,10 +261,64 @@ class _RecipeDetailState extends State<RecipeDetail> {
       ],
     ];
 
-    return ListView(
+    return Theme(
       key: const ValueKey('recipe-detail'),
-      padding: const .fromLTRB(20, 16, 20, 32),
-      children: children,
+      data: theme.copyWith(
+        splashFactory: NoSplash.splashFactory,
+        highlightColor: Colors.transparent,
+      ),
+      child: ListView(
+        key: ValueKey(recipe),
+        padding: const .fromLTRB(20, 16, 20, 32),
+        children: children,
+      ),
+    );
+  }
+}
+
+class _IngredientTile extends SignalStatefulWidget {
+  const new({required this.text, super.key});
+
+  final String text;
+
+  @override
+  State<_IngredientTile> createState() => _IngredientTileState();
+}
+
+class _IngredientTileState extends State<_IngredientTile>
+    with AutomaticKeepAliveClientMixin<_IngredientTile> {
+  final _checked = signal(false);
+
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  void dispose() {
+    _checked.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    final checked = _checked.value;
+    TextStyle? style;
+    if (checked) style = TextStyle(color: ColorScheme.of(context).onSurface.withValues(alpha: 0.5));
+
+    return CheckboxListTile(
+      value: checked,
+      onChanged: (_) {
+        _checked.value = !_checked.value;
+      },
+      overlayColor: .all(Colors.transparent),
+      controlAffinity: .leading,
+      contentPadding: .zero,
+      visualDensity: .compact,
+      dense: true,
+      horizontalTitleGap: 4,
+      minVerticalPadding: 0,
+      titleAlignment: .top,
+      title: Text(widget.text, style: style),
     );
   }
 }

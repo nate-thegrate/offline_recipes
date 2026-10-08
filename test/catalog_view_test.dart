@@ -161,6 +161,52 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('a checked ingredient stays checked after scrolling the recipe', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(400, 500));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final recipe = Recipe(
+      name: 'long stew',
+      tags: const ['soup'],
+      servings: 4,
+      servingsSpecified: true,
+      calculatesNutrition: false,
+      lines: [for (var i = 0; i < 40; i++) RecipeLine('ingredient $i')],
+      directions: const ['Simmer until thick.'],
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(body: RecipeDetail(recipe: recipe, showTitle: true)),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final top = find.byKey(const ValueKey('ingredient-0'));
+    await tester.tap(find.descendant(of: top, matching: find.byType(Checkbox)));
+    await tester.pumpAndSettle();
+    expect(
+      tester.widget<Checkbox>(find.descendant(of: top, matching: find.byType(Checkbox))).value,
+      isTrue,
+    );
+
+    final position = tester.state<ScrollableState>(_detailScroll).position;
+    for (var i = 0; i < 8 && position.extentAfter > 0; i++) {
+      position.jumpTo(position.maxScrollExtent);
+      await tester.pump();
+    }
+    expect(position.extentAfter, 0);
+    expect(position.pixels, greaterThan(position.viewportDimension + 250));
+
+    position.jumpTo(0);
+    await tester.pumpAndSettle();
+    expect(position.pixels, 0);
+    expect(
+      tester.widget<Checkbox>(find.descendant(of: top, matching: find.byType(Checkbox))).value,
+      isTrue,
+    );
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('tag filters and search show the recipes that match', (tester) async {
     await tester.pumpWidget(const App());
     await tester.pumpAndSettle();
