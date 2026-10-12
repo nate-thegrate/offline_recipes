@@ -25,8 +25,6 @@ const _seedHsv = HSVColor.fromAHSV(1, defaultHue, 1, 1);
 /// Fully saturated seed at [hue].
 Color colorForHue(double hue) => _seedHsv.withHue(ui.clampDouble(hue, 0, 360)).toColor();
 
-final _preferencesStore = _PreferencesStore();
-
 final themeMode = PersistedEnumSignal<ThemeMode>(.system, 'themeMode', ThemeMode.values);
 final colorSchemeHue = PersistedDoubleSignal(defaultHue, 'colorSchemeHue');
 
@@ -47,12 +45,14 @@ const _animatedTheme = Duration(milliseconds: 200);
 /// pointer lifts.
 Duration themeAnimationDuration = _animatedTheme;
 
+SharedPreferences? _preferences;
+
 /// SharedPreferences backing for the settings signals.
 ///
 /// [loadSettings] attaches the instance. Until then, a read returns null and a write is skipped.
 /// Attaching the instance does not reload. [loadSettings] calls init on each signal after that.
 class _PreferencesStore implements SignalsKeyValueStore {
-  SharedPreferences? _preferences;
+  const new();
 
   @override
   Future<String?> getItem(String key) => .value(_preferences?.getString(key));
@@ -65,8 +65,8 @@ class _PreferencesStore implements SignalsKeyValueStore {
 }
 
 Future<void> loadSettings() async {
-  SignalsKeyValueStore.defaultStore = _preferencesStore
-    .._preferences = await SharedPreferences.getInstance();
+  _preferences = await SharedPreferences.getInstance();
+  SignalsKeyValueStore.defaultStore = const _PreferencesStore();
   await (
     themeMode.init(),
     colorSchemeHue.init(),
@@ -79,7 +79,7 @@ Future<void> loadSettings() async {
 
 @visibleForTesting
 void debugResetSettings() {
-  _preferencesStore._preferences = null;
+  _preferences = null;
   themeAnimationDuration = _animatedTheme;
   themeMode.value = .system;
   colorSchemeHue.value = defaultHue;
