@@ -119,43 +119,25 @@ class _RecipeTileState extends State<_RecipeTile> {
   @override
   Widget build(BuildContext context) {
     final recipe = widget.recipe;
-    final textTheme = TextTheme.of(context);
-    final highlighted = _highlighted.value;
+    late final price = switch (listPrice.value) {
+      .hidden => null,
+      .serving => recipe.servingPrice,
+      .recipe => recipe.totalPrice,
+    };
+    Widget? trailing;
+    if (recipe.isPriced && price != null) {
+      trailing = Text(price.toString(), style: TextTheme.of(context).titleMedium);
+    }
+
     return ListTile(
-      selected: highlighted,
+      selected: _highlighted.value,
       title: Text(titleCase(recipe.name)),
       subtitle: Text(recipeSubtitle(recipe)),
-      trailing: _trailing(textTheme),
+      trailing: trailing,
       onTap: () {
         selected.value = recipe;
         widget.onSelect?.call(recipe);
       },
-    );
-  }
-
-  Widget? _trailing(TextTheme textTheme) {
-    final recipe = widget.recipe;
-    if (!recipe.isPriced) return null;
-    final Price price;
-    final String? caption;
-    switch (listPrice.value) {
-      case .hidden:
-        return null;
-      case .serving:
-        price = recipe.servingPrice;
-        caption = recipe.servingsSpecified ? 'each' : null;
-      case .recipe:
-        price = recipe.totalPrice;
-        caption = recipe.servingsSpecified ? 'total' : null;
-    }
-    return Column(
-      mainAxisAlignment: .center,
-      crossAxisAlignment: .end,
-      mainAxisSize: .min,
-      children: [
-        Text(price.toString(), style: textTheme.titleMedium),
-        if (caption != null) Text(caption, style: textTheme.labelSmall),
-      ],
     );
   }
 }

@@ -223,16 +223,15 @@ void main() {
     await tester.pumpAndSettle();
     final tile = find.byKey(ValueKey('recipe-${recipe.name}'));
 
+    expect(recipe.totalPrice.dollars, isNot(recipe.servingPrice.dollars));
     expect(_inTile(tile, recipe.servingPrice.toString()), findsOneWidget);
-    expect(_inTile(tile, 'each'), findsOneWidget);
+    expect(_inTile(tile, recipe.totalPrice.toString()), findsNothing);
 
     await _openSettings(tester);
     await _choose(tester, 'list-price', 'Recipe');
     await _closeSettings(tester);
     expect(_inTile(tile, recipe.totalPrice.toString()), findsOneWidget);
-    expect(_inTile(tile, 'total'), findsOneWidget);
-    expect(_inTile(tile, 'each'), findsNothing);
-    expect(recipe.totalPrice.dollars, isNot(recipe.servingPrice.dollars));
+    expect(_inTile(tile, recipe.servingPrice.toString()), findsNothing);
 
     await _openSettings(tester);
     await _choose(tester, 'list-price', 'Hidden');
