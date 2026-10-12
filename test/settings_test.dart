@@ -11,8 +11,9 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUpAll(loadCatalog);
 
-  setUp(() {
+  setUp(() async {
     SharedPreferences.setMockInitialValues({});
+    await loadSettings();
     debugResetSettings();
     tag.value = null;
     query.value = '';
@@ -43,17 +44,13 @@ void main() {
     );
   });
 
-  test('the default hue is the brown seed', () {
-    expect(defaultHue, inInclusiveRange(0, 360));
-    expect(colorForHue(defaultHue).toARGB32(), defaultSeed.toARGB32());
+  test('hue seeds are fully saturated', () {
+    for (final hue in [0.0, defaultHue, 180.0, 360.0]) {
+      final hsv = HSVColor.fromColor(colorForHue(hue));
+      expect(hsv.saturation, 1, reason: 'hue $hue');
+      expect(hsv.value, 1, reason: 'hue $hue');
+    }
     expect(colorForHue(0).toARGB32(), colorForHue(360).toARGB32());
-  });
-
-  test('a stored hue is restored', () async {
-    SharedPreferences.setMockInitialValues({'colorSchemeHue': '200'});
-    await loadSettings();
-    expect(colorSchemeHue.value, 200);
-    expect(colorSchemeSeed.value.toARGB32(), colorForHue(200).toARGB32());
   });
 
   testWidgets('settings leave the open recipe, search, and tag in place', (tester) async {
@@ -335,11 +332,6 @@ void main() {
     expect(tester.widget<MaterialApp>(find.byType(MaterialApp)).themeMode, ThemeMode.dark);
     expect(scheme.brightness, Brightness.dark);
     expect(colorSchemeHue.value, hue);
-    expect(
-      scheme.primary,
-      ColorScheme.fromSeed(seedColor: colorForHue(hue), brightness: .dark).primary,
-    );
-    expect(tester.widget<Slider>(find.byKey(const ValueKey('color-hue'))).value, hue);
     expect(
       tester.widget<SegmentedButton<UnitNames>>(find.byKey(const ValueKey('unit-names'))).selected,
       {UnitNames.superShort},

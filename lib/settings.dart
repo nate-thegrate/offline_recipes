@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:signal_widgets/signal_widgets.dart';
@@ -16,56 +18,26 @@ enum TextSize {
   final double factor;
 }
 
-const defaultSeed = Color(0xFF8A5A34);
+/// Default color-scheme hue, in degrees.
+const defaultHue = 27.0;
+const _seedHsv = HSVColor.fromAHSV(1, defaultHue, 1, 1);
 
-final HSVColor _seedHsv = HSVColor.fromColor(defaultSeed);
-
-/// Hue of [defaultSeed], in degrees.
-final double defaultHue = _seedHsv.hue;
-
-/// Seed color at [hue], keeping the saturation and value of [defaultSeed].
-Color colorForHue(double hue) {
-  if (hue == defaultHue) return defaultSeed;
-  return _seedHsv.withHue(hue.clamp(0, 360).toDouble()).toColor();
-}
+/// Fully saturated seed at [hue].
+Color colorForHue(double hue) => _seedHsv.withHue(ui.clampDouble(hue, 0, 360)).toColor();
 
 final _preferencesStore = _PreferencesStore();
 
-final themeMode = PersistedEnumSignal<ThemeMode>(
-  .system,
-  'themeMode',
-  ThemeMode.values,
-  store: _preferencesStore,
-);
-final colorSchemeHue = PersistedDoubleSignal(
-  defaultHue,
-  'colorSchemeHue',
-  store: _preferencesStore,
-);
+final themeMode = PersistedEnumSignal<ThemeMode>(.system, 'themeMode', ThemeMode.values);
+final colorSchemeHue = PersistedDoubleSignal(defaultHue, 'colorSchemeHue');
 
 /// Hue the theme and the slider show. Saved to [colorSchemeHue] when the pointer lifts.
-final _previewHue = signal(defaultHue);
-
+final _previewHue = signal(colorSchemeHue.peek());
 final Computed<Color> colorSchemeSeed = computed(() => colorForHue(_previewHue.value));
-final unitNames = PersistedEnumSignal<UnitNames>(
-  .full,
-  'unitNames',
-  UnitNames.values,
-  store: _preferencesStore,
-);
-final listPrice = PersistedEnumSignal<ListPrice>(
-  .serving,
-  'listPrice',
-  ListPrice.values,
-  store: _preferencesStore,
-);
-final textSize = PersistedEnumSignal<TextSize>(
-  .normal,
-  'textSize',
-  TextSize.values,
-  store: _preferencesStore,
-);
-final showNutrition = PersistedBoolSignal(true, 'showNutrition', store: _preferencesStore);
+
+final unitNames = PersistedEnumSignal<UnitNames>(.full, 'unitNames', UnitNames.values);
+final listPrice = PersistedEnumSignal<ListPrice>(.serving, 'listPrice', ListPrice.values);
+final textSize = PersistedEnumSignal<TextSize>(.normal, 'textSize', TextSize.values);
+final showNutrition = PersistedBoolSignal(true, 'showNutrition');
 
 const _animatedTheme = Duration(milliseconds: 200);
 
@@ -83,7 +55,7 @@ class _PreferencesStore implements SignalsKeyValueStore {
   SharedPreferences? _preferences;
 
   @override
-  Future<String?> getItem(String key) => Future.value(_preferences?.getString(key));
+  Future<String?> getItem(String key) => .value(_preferences?.getString(key));
 
   @override
   Future<void> setItem(String key, String value) async => _preferences?.setString(key, value);
@@ -93,7 +65,8 @@ class _PreferencesStore implements SignalsKeyValueStore {
 }
 
 Future<void> loadSettings() async {
-  _preferencesStore._preferences = await SharedPreferences.getInstance();
+  SignalsKeyValueStore.defaultStore = _preferencesStore
+    .._preferences = await SharedPreferences.getInstance();
   await (
     themeMode.init(),
     colorSchemeHue.init(),
@@ -102,7 +75,6 @@ Future<void> loadSettings() async {
     textSize.init(),
     showNutrition.init(),
   ).wait;
-  _previewHue.value = colorSchemeHue.value;
 }
 
 @visibleForTesting

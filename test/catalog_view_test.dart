@@ -6,11 +6,16 @@ import 'package:offline_recipes/food.dart';
 import 'package:offline_recipes/main.dart';
 import 'package:offline_recipes/measure.dart';
 import 'package:offline_recipes/nutrition_label.dart';
+import 'package:offline_recipes/settings.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   setUpAll(loadCatalog);
 
-  setUp(() {
+  setUp(() async {
+    SharedPreferences.setMockInitialValues({});
+    await loadSettings();
+    debugResetSettings();
     tag.value = null;
     query.value = '';
     selected.value = null;
