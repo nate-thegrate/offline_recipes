@@ -78,11 +78,15 @@ sealed class Unit {
     return match.unit;
   }
 
+  /// The unit at the start of [text], and the suffix after that spelling.
+  ///
+  /// The suffix keeps its leading whitespace. The spelling length is the input length minus the
+  /// suffix length.
   static ({Unit unit, String rest})? matchLeading(String text) {
     final folded = text.replaceAll('\u03BC', '\u00B5');
     for (final spelling in _unitSpellings) {
       if (!_hasSpellingPrefix(folded, spelling)) continue;
-      return (unit: spelling.unit, rest: text.substring(spelling.text.length).trim());
+      return (unit: spelling.unit, rest: text.substring(spelling.text.length));
     }
     return null;
   }

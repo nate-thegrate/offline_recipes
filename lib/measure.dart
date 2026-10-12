@@ -1,9 +1,31 @@
 import 'food.dart';
 
+enum UnitNames { full, short, superShort }
+
 String labelAmount(double amount) => switch (amount) {
   > 0 && < 10 => amount.toStringAsFixed(1),
   _ => amount.round().toString(),
 };
+
+String _unitSpelling(UnitName name, double amount, UnitNames names) {
+  final plural = amount > 1;
+  return switch (names) {
+    .full => plural ? name.fullPlural : name.full,
+    .short => plural ? name.plural : name.short,
+    .superShort => name.superShort,
+  };
+}
+
+/// Rewrites a leading measure in [source]. Amounts such as "1 1/2" stay as written.
+String displayIngredient(String source, UnitNames names) {
+  final text = source.trim();
+  final parsed = tryParseAmount(text);
+  if (parsed == null) return source;
+  final spelling = _unitSpelling(parsed.measure.unit.name, parsed.measure.amount, names);
+  final prefix = text.substring(0, parsed.amountEnd);
+  final tail = text.substring(parsed.unitEnd);
+  return '$prefix $spelling$tail';
+}
 
 class Measure {
   const new(this.amount, this.unit);
@@ -50,12 +72,18 @@ class Measure {
 }
 
 class ParsedAmount {
-  const new(this.measure, this.name);
+  const new(this.measure, this.name, {required this.amountEnd, required this.unitEnd});
 
   final Measure measure;
 
   /// Ingredient name after the unit. Empty when the text is only a measure.
   final String name;
+
+  /// Exclusive end of the written amount in the trimmed source.
+  final int amountEnd;
+
+  /// Exclusive end of the leading unit spelling in the trimmed source.
+  final int unitEnd;
 }
 
 Measure parseMeasure(String text) {
@@ -67,7 +95,8 @@ Measure parseMeasure(String text) {
 }
 
 ParsedAmount? tryParseAmount(String text) {
-  final match = _amount.firstMatch(text.trim());
+  final trimmed = text.trim();
+  final match = _amount.firstMatch(trimmed);
   if (match == null) return null;
   final whole = match.namedGroup('whole');
   final double amount;
@@ -85,9 +114,16 @@ ParsedAmount? tryParseAmount(String text) {
       amount = double.parse(match.namedGroup('decimal')!);
     }
   }
-  final leading = Unit.matchLeading(match.namedGroup('rest')!);
+  final rawRest = match.namedGroup('rest')!;
+  final leading = Unit.matchLeading(rawRest);
   if (leading == null) return null;
-  return ParsedAmount(Measure(amount, leading.unit), leading.rest);
+  final restStart = match.end - rawRest.length;
+  return ParsedAmount(
+    Measure(amount, leading.unit),
+    leading.rest.trim(),
+    amountEnd: trimmed.substring(0, restStart).trimRight().length,
+    unitEnd: restStart + rawRest.length - leading.rest.length,
+  );
 }
 
 final _amount = RegExp(

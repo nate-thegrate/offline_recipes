@@ -5,6 +5,7 @@ import 'package:signal_widgets/signal_widgets.dart';
 
 import 'catalog.dart';
 import 'catalog_view.dart';
+import 'settings.dart';
 
 void main() async {
   if (kDebugMode) {
@@ -14,21 +15,33 @@ void main() async {
   }
 
   SignalsObserver.instance = null;
-  await loadCatalog();
+  await (loadCatalog(), loadSettings()).wait;
   runApp(const App());
 }
 
-class App extends StatelessWidget {
+class App extends SignalWidget {
   const new({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final seed = colorSchemeSeed.value;
+    final factor = textSize.value.factor;
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Recipes',
       navigatorKey: navKey,
-      theme: ThemeData(colorSchemeSeed: const Color(0xFF8A5A34), brightness: .light),
-      darkTheme: ThemeData(colorSchemeSeed: const Color(0xFF8A5A34), brightness: .dark),
+      themeMode: themeMode.value,
+      themeAnimationDuration: themeAnimationDuration,
+      theme: ThemeData(colorSchemeSeed: seed, brightness: .light),
+      darkTheme: ThemeData(colorSchemeSeed: seed, brightness: .dark),
+      builder: (context, child) {
+        final media = MediaQuery.of(context);
+        final scale = media.textScaler.scale(16) / 16 * factor;
+        return MediaQuery(
+          data: media.copyWith(textScaler: TextScaler.linear(scale)),
+          child: child!,
+        );
+      },
       home: const CatalogPage(),
     );
   }

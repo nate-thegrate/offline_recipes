@@ -3,7 +3,9 @@ import 'package:signal_widgets/signal_widgets.dart';
 
 import 'catalog.dart';
 import 'food.dart';
+import 'measure.dart';
 import 'nutrition_label.dart';
+import 'settings.dart';
 
 final tag = signal<String?>(null);
 final query = signal('');
@@ -18,7 +20,7 @@ class CatalogPage extends StatelessWidget {
   static void _navigateRecipe(Recipe recipe) {
     final route = MaterialPageRoute<void>(
       builder: (context) => Scaffold(
-        appBar: AppBar(title: Text(titleCase(recipe.name))),
+        appBar: AppBar(title: Text(titleCase(recipe.name)), actions: const [SettingsButton()]),
         body: RecipeDetail(recipe: recipe, showTitle: false),
       ),
     );
@@ -34,6 +36,9 @@ class CatalogPage extends StatelessWidget {
         excludeHeaderSemantics: true,
         notificationPredicate: (_) => false,
         title: const RecipeSearchField(),
+        actions: const [SettingsButton()],
+        titleSpacing: 8,
+        actionsPadding: .only(right: 8),
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {
@@ -120,21 +125,55 @@ class _RecipeTileState extends State<_RecipeTile> {
       selected: highlighted,
       title: Text(titleCase(recipe.name)),
       subtitle: Text(recipeSubtitle(recipe)),
-      trailing: recipe.isPriced
-          ? Column(
-              mainAxisAlignment: .center,
-              crossAxisAlignment: .end,
-              mainAxisSize: .min,
-              children: [
-                Text(recipe.servingPrice.toString(), style: textTheme.titleMedium),
-                if (recipe.servingsSpecified) Text('each', style: textTheme.labelSmall),
-              ],
-            )
-          : null,
+      trailing: _trailing(textTheme),
       onTap: () {
         selected.value = recipe;
         widget.onSelect?.call(recipe);
       },
+    );
+  }
+
+  Widget? _trailing(TextTheme textTheme) {
+    final recipe = widget.recipe;
+    if (!recipe.isPriced) return null;
+    final Price price;
+    final String? caption;
+    switch (listPrice.value) {
+      case .hidden:
+        return null;
+      case .serving:
+        price = recipe.servingPrice;
+        caption = recipe.servingsSpecified ? 'each' : null;
+      case .recipe:
+        price = recipe.totalPrice;
+        caption = recipe.servingsSpecified ? 'total' : null;
+    }
+    return Column(
+      mainAxisAlignment: .center,
+      crossAxisAlignment: .end,
+      mainAxisSize: .min,
+      children: [
+        Text(price.toString(), style: textTheme.titleMedium),
+        if (caption != null) Text(caption, style: textTheme.labelSmall),
+      ],
+    );
+  }
+}
+
+class SettingsButton extends StatelessWidget {
+  const new({super.key});
+
+  static void _open() {
+    navigator.push(MaterialPageRoute<void>(builder: (context) => const SettingsPage()));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      key: const ValueKey('open-settings'),
+      tooltip: 'Settings',
+      onPressed: _open,
+      icon: const Icon(Icons.settings_outlined),
     );
   }
 }
@@ -210,7 +249,7 @@ class SelectedRecipe extends SignalWidget {
   }
 }
 
-class RecipeDetail extends StatelessWidget {
+class RecipeDetail extends SignalWidget {
   const new({required this.recipe, required this.showTitle, super.key});
 
   final Recipe recipe;
@@ -218,6 +257,8 @@ class RecipeDetail extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final names = unitNames.value;
+    final nutrition = showNutrition.value;
     final theme = Theme.of(context);
     final textTheme = theme.textTheme;
     String? previousGroup;
@@ -237,7 +278,7 @@ class RecipeDetail extends StatelessWidget {
               padding: const .only(top: 8, bottom: 4),
               child: Text(titleCase(group), style: textTheme.titleSmall),
             ),
-        _IngredientTile(key: ValueKey('ingredient-$index'), text: text),
+        _IngredientTile(key: ValueKey('ingredient-$index'), text: displayIngredient(text, names)),
       ],
       const SizedBox(height: 18),
       Text('Directions', style: textTheme.titleMedium),
@@ -256,8 +297,7 @@ class RecipeDetail extends StatelessWidget {
       if (recipe.isPriced) ...[
         const SizedBox(height: 12),
         _PriceSummary(recipe: recipe),
-        const SizedBox(height: 16),
-        NutritionLabel(recipe),
+        if (nutrition) ...[const SizedBox(height: 16), NutritionLabel(recipe)],
       ],
     ];
 
