@@ -140,8 +140,10 @@ class Recipe implements Food {
   @override
   NutritionFacts get servingNutrition => totalNutrition / servings;
 
-  bool matches(String? tag, String query) {
-    if (tag != null && !tags.contains(tag)) return false;
+  bool matches(Iterable<String> requiredTags, String query) {
+    for (final tag in requiredTags) {
+      if (!tags.contains(tag)) return false;
+    }
     final normalized = query.trim().toLowerCase();
     if (normalized.isEmpty) return true;
     return _searchText.contains(normalized);

@@ -15,7 +15,7 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     await loadSettings();
     debugResetSettings();
-    tag.value = null;
+    selectedTags.clear();
     query.value = '';
     selected.value = null;
   });
@@ -67,7 +67,7 @@ void main() {
 
     await _openSettings(tester);
     expect(selected.value, recipe);
-    expect(tag.value, tagName);
+    expect(selectedTags.value, {tagName});
     expect(query.value, recipe.name);
 
     await _closeSettings(tester);

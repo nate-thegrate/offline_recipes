@@ -171,22 +171,24 @@ void main() {
     expect(recipe.servingNutrition.calories, ingredient.servingNutrition.calories / 2);
   });
 
-  test('search matches the name, ingredients, and directions in the selected tag', () {
+  test('search matches the name, ingredients, and directions for every selected tag', () {
     final recipe = _recipe(
       name: 'cinnamon rolls',
-      tags: const ['breakfast'],
+      tags: const ['breakfast', 'dessert'],
       lines: const [RecipeLine('1 cup erythritol')],
       directions: const ['Cut with dental floss.'],
     );
 
-    expect(recipe.matches(null, 'dental floss'), isTrue);
-    expect(recipe.matches(null, '  Erythritol '), isTrue);
-    expect(recipe.matches(null, 'cinnamon'), isTrue);
-    expect(recipe.matches(null, ''), isTrue);
-    expect(recipe.matches('breakfast', 'dental floss'), isTrue);
-    expect(recipe.matches('drink', 'dental floss'), isFalse);
-    expect(recipe.matches('drink', ''), isFalse);
-    expect(recipe.matches(null, 'avocado'), isFalse);
+    expect(recipe.matches(const [], 'dental floss'), isTrue);
+    expect(recipe.matches(const [], '  Erythritol '), isTrue);
+    expect(recipe.matches(const [], 'cinnamon'), isTrue);
+    expect(recipe.matches(const [], ''), isTrue);
+    expect(recipe.matches(const ['breakfast'], 'dental floss'), isTrue);
+    expect(recipe.matches(const ['breakfast', 'dessert'], 'dental floss'), isTrue);
+    expect(recipe.matches(const ['dessert'], ''), isTrue);
+    expect(recipe.matches(const ['drink'], 'dental floss'), isFalse);
+    expect(recipe.matches(const ['breakfast', 'drink'], ''), isFalse);
+    expect(recipe.matches(const [], 'avocado'), isFalse);
   });
 }
 

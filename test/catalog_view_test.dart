@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:offline_recipes/catalog.dart';
@@ -16,7 +17,7 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     await loadSettings();
     debugResetSettings();
-    tag.value = null;
+    selectedTags.clear();
     query.value = '';
     selected.value = null;
   });
@@ -225,10 +226,10 @@ void main() {
     await tester.tap(find.byKey(ValueKey('tag-$tagName')));
     await tester.pumpAndSettle();
 
-    final listed = recipes.where((recipe) => recipe.matches(tagName, '')).first;
+    final listed = recipes.where((recipe) => recipe.matches([tagName], '')).first;
     expect(find.byKey(ValueKey('recipe-${listed.name}')), findsOneWidget);
     for (final recipe in recipes) {
-      if (recipe.matches(tagName, '')) continue;
+      if (recipe.matches([tagName], '')) continue;
       expect(find.byKey(ValueKey('recipe-${recipe.name}')), findsNothing, reason: recipe.name);
     }
 
@@ -254,9 +255,77 @@ void main() {
     );
     expect(find.byKey(ValueKey('recipe-${shown.name}')), findsOneWidget);
     for (final recipe in recipes) {
-      if (recipe.matches(null, shown.name)) continue;
+      if (recipe.matches(const [], shown.name)) continue;
       expect(find.byKey(ValueKey('recipe-${recipe.name}')), findsNothing, reason: recipe.name);
     }
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('a long press or shift-click keeps the other selected tags', (tester) async {
+    await tester.pumpWidget(const App());
+    await tester.pumpAndSettle();
+
+    Finder findRecipe(Recipe recipe) => find.byKey(ValueKey('recipe-${recipe.name}'));
+
+    Future<void> tapWithKeyHeld(Finder finder, {LogicalKeyboardKey key = .shiftLeft}) async {
+      await tester.sendKeyDownEvent(key);
+      await tester.tap(finder, kind: .mouse);
+      await tester.sendKeyUpEvent(key);
+    }
+
+    void expectSelected(Set<String> selected) {
+      for (final name in tags) {
+        expect(
+          tester.widget<FilterChip>(find.byKey(ValueKey('tag-$name'))).selected,
+          selected.contains(name),
+          reason: name,
+        );
+      }
+    }
+
+    Future<void> expectListed(Recipe recipe) async {
+      final tile = findRecipe(recipe);
+      await tester.scrollUntilVisible(tile, 400, scrollable: _listScroll);
+      expect(tile, findsOneWidget);
+    }
+
+    final (:first, :second, :both, :onlyFirst, :onlySecond) = _tagPair();
+    final findFirst = find.byKey(ValueKey('tag-$first'));
+    final findSecond = find.byKey(ValueKey('tag-$second'));
+
+    await tester.tap(findFirst);
+    await tester.pumpAndSettle();
+    expectSelected({first});
+    await expectListed(onlyFirst);
+    expect(findRecipe(onlySecond), findsNothing);
+
+    await tester.longPress(findSecond, kind: .mouse);
+    await tester.pumpAndSettle();
+    expectSelected({first, second});
+    await expectListed(both);
+    expect(findRecipe(onlyFirst), findsNothing);
+    expect(findRecipe(onlySecond), findsNothing);
+
+    await tester.longPress(findSecond);
+    await tester.pumpAndSettle();
+    expectSelected({first});
+    await expectListed(onlyFirst);
+
+    await tapWithKeyHeld(findSecond);
+    await tester.pumpAndSettle();
+    expectSelected({first, second});
+    expect(findRecipe(onlyFirst), findsNothing);
+
+    await tapWithKeyHeld(findFirst);
+    await tester.pumpAndSettle();
+    expectSelected({second});
+    await expectListed(onlySecond);
+    expect(findRecipe(onlyFirst), findsNothing);
+
+    await tapWithKeyHeld(findFirst, key: .controlLeft);
+    await tester.pumpAndSettle();
+    expectSelected({first});
+    expect(findRecipe(onlySecond), findsNothing);
     expect(tester.takeException(), isNull);
   });
 
@@ -352,6 +421,38 @@ void main() {
     expect(find.byTooltip('Back'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
+}
+
+({String first, String second, Recipe both, Recipe onlyFirst, Recipe onlySecond}) _tagPair() {
+  for (final first in tags) {
+    for (final second in tags) {
+      if (first == second) continue;
+      Recipe? both;
+      Recipe? onlyFirst;
+      Recipe? onlySecond;
+      for (final recipe in recipes) {
+        final hasFirst = recipe.tags.contains(first);
+        final hasSecond = recipe.tags.contains(second);
+        if (hasFirst && hasSecond) {
+          both ??= recipe;
+        } else if (hasFirst) {
+          onlyFirst ??= recipe;
+        } else if (hasSecond) {
+          onlySecond ??= recipe;
+        }
+      }
+      if (both != null && onlyFirst != null && onlySecond != null) {
+        return (
+          first: first,
+          second: second,
+          both: both,
+          onlyFirst: onlyFirst,
+          onlySecond: onlySecond,
+        );
+      }
+    }
+  }
+  fail('Expected two tags with a shared recipe and recipes unique to each');
 }
 
 String _selectiveTag() {

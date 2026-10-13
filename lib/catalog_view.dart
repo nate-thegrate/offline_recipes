@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:signal_widgets/signal_widgets.dart';
 
@@ -7,9 +8,23 @@ import 'measure.dart';
 import 'nutrition_label.dart';
 import 'settings.dart';
 
-final tag = signal<String?>(null);
+final selectedTags = setSignal(<String>{});
 final query = signal('');
 final selected = signal<Recipe?>(null);
+
+void _selectTag(String option) {
+  if (HardwareKeyboard.instance.isShiftPressed) {
+    _toggleTag(option);
+    return;
+  }
+  final onlyThis = selectedTags.length == 1 && selectedTags.contains(option);
+  selectedTags.clear();
+  if (!onlyThis) selectedTags.add(option);
+}
+
+void _toggleTag(String option) {
+  if (!selectedTags.remove(option)) selectedTags.add(option);
+}
 
 const navKey = GlobalObjectKey<NavigatorState>(#navigator);
 NavigatorState get navigator => navKey.currentState!;
@@ -71,11 +86,11 @@ class RecipeBrowser extends StatelessWidget {
         Expanded(
           child: SignalBuilder(
             builder: (context) {
-              final tagName = tag.value;
+              final requiredTags = selectedTags.value;
               final text = query.value;
               final matching = [
                 for (final recipe in recipes)
-                  if (recipe.matches(tagName, text)) recipe,
+                  if (recipe.matches(requiredTags, text)) recipe,
               ];
               if (matching.isEmpty) {
                 return const Center(child: Text('No recipes match.'));
@@ -198,21 +213,36 @@ class TagFilters extends SignalWidget {
 
   @override
   Widget build(BuildContext context) {
-    final current = tag.value;
+    final current = selectedTags.value;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
       child: Wrap(
         spacing: 8,
         runSpacing: 8,
         children: [
-          for (final option in tags)
-            FilterChip(
-              key: ValueKey('tag-$option'),
-              label: Text(titleCase(option)),
-              selected: current == option,
-              onSelected: (selected) => tag.value = selected ? option : null,
-            ),
+          for (final option in tags) _TagChip(option: option, selected: current.contains(option)),
         ],
+      ),
+    );
+  }
+}
+
+class _TagChip extends StatelessWidget {
+  const new({required this.option, required this.selected});
+
+  final String option;
+  final bool selected;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      excludeFromSemantics: true,
+      onLongPress: () => _toggleTag(option),
+      child: FilterChip(
+        key: ValueKey('tag-$option'),
+        label: Text(titleCase(option)),
+        selected: selected,
+        onSelected: (_) => _selectTag(option),
       ),
     );
   }
