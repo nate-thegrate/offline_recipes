@@ -7,6 +7,17 @@ String labelAmount(double amount) => switch (amount) {
   _ => amount.round().toString(),
 };
 
+extension PlainNumber on double {
+  String get plainNumber {
+    if (this == roundToDouble()) return toStringAsFixed(0);
+    return toString();
+  }
+}
+
+String formatMeasure(Measure measure) {
+  return '${measure.amount.plainNumber} ${measure.unit.name.short}';
+}
+
 String _unitSpelling(UnitName name, double amount, UnitNames names) {
   final plural = amount > 1;
   return switch (names) {

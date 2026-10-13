@@ -1,5 +1,6 @@
 import 'package:flutter/services.dart';
 import 'package:meta/meta.dart';
+import 'package:signal_widgets/signal_widgets.dart';
 import 'package:yaml/yaml.dart';
 
 import 'food.dart';
@@ -31,11 +32,16 @@ class Ingredient implements Food {
     required this.totalPrice,
     required this.servingNutrition,
     this.measurementText = const {},
-  }) : assert(servings > 0, 'A container needs at least one serving');
+    String? servingSizeText,
+  }) : servingSizeText = servingSizeText ?? formatMeasure(servingSize),
+       assert(servings > 0, 'A container needs at least one serving');
 
   @override
   final String name;
   final Measure servingSize;
+
+  /// Serving size as written, such as "1 cup" or "100 g".
+  final String servingSizeText;
   @override
   final double servings;
   @override
@@ -140,6 +146,23 @@ class Recipe implements Food {
   @override
   NutritionFacts get servingNutrition => totalNutrition / servings;
 
+  /// Null when the recipe is one batch.
+  String? get specifiedServings => servingsSpecified ? servings.plainNumber : null;
+
+  String get ingredientLinesText {
+    final buffer = StringBuffer();
+    String? group;
+    for (final line in lines) {
+      if (line.group != group) {
+        if (buffer.isNotEmpty) buffer.writeln();
+        group = line.group;
+        if (group != null) buffer.writeln('$group:');
+      }
+      buffer.writeln(line.text);
+    }
+    return buffer.toString().trimRight();
+  }
+
   bool matches(Iterable<String> requiredTags, String query) {
     for (final tag in requiredTags) {
       if (!tags.contains(tag)) return false;
@@ -201,27 +224,26 @@ class Recipe implements Food {
   }
 }
 
-extension type Ingredients(Map<String, Ingredient> _byName) {
-  Ingredient operator [](String name) {
-    final found = _byName[name.toLowerCase()];
-    if (found == null) {
-      throw ArgumentError('Unknown ingredient: $name');
-    }
-    return found;
+/// Keyed by the ingredient's lowercase name.
+final ingredients = mapSignal(<String, Ingredient>{});
+final recipes = listSignal(<Recipe>[]);
+
+Recipe? findRecipe(String name) {
+  for (final recipe in recipes) {
+    if (recipe.name == name) return recipe;
   }
+  return null;
 }
 
-extension type Recipes(List<Recipe> _recipes) implements Iterable<Recipe> {
-  Recipe operator [](String name) {
-    for (final recipe in _recipes) {
-      if (recipe.name == name) return recipe;
-    }
-    throw ArgumentError('Unknown recipe: $name');
-  }
-}
+/// Recipe open in the browser. Replaced when a catalog edit rebuilds that recipe.
+final selected = signal<Recipe?>(null);
 
-late final Ingredients ingredients;
-late final Recipes recipes;
+final Map<String, Ingredient> _bundledIngredients = {};
+final List<Recipe> _bundledRecipes = [];
+
+Map<String, Ingredient> get bundledIngredients => Map.unmodifiable(_bundledIngredients);
+List<Recipe> get bundledRecipes => List.unmodifiable(_bundledRecipes);
+
 late final Map<String, Measure> dailyValues;
 
 List<String> get tags {
@@ -239,30 +261,54 @@ Future<void> loadCatalog() async {
   final ingredientYaml = await rootBundle.loadString('yaml/ingredient_data.yaml');
   final dailyValueYaml = await rootBundle.loadString('yaml/daily_values.yaml');
   final parsed = _parseIngredients(_asMap(loadYaml(ingredientYaml) as Object?));
-  ingredients = Ingredients(parsed);
-  recipes = Recipes(_parseRecipes(_asMap(loadYaml(recipeYaml) as Object?), parsed));
+  final parsedRecipes = _parseRecipes(_asMap(loadYaml(recipeYaml) as Object?), parsed);
   dailyValues = _parseDailyValues(_asMap(loadYaml(dailyValueYaml) as Object?));
+  _bundledIngredients
+    ..clear()
+    ..addAll(parsed);
+  _bundledRecipes
+    ..clear()
+    ..addAll(parsedRecipes);
+  publishCatalog(Map<String, Ingredient>.of(parsed), List<Recipe>.of(parsedRecipes));
 }
 
-YamlMap _asMap(Object? document) {
-  if (document is! YamlMap) throw const FormatException('Expected a YAML map');
+void publishCatalog(Map<String, Ingredient> pantry, List<Recipe> next, {String? focus}) {
+  ingredients.value = pantry;
+  recipes.value = next;
+  final target = focus ?? selected.peek()?.name;
+  if (target == null) return;
+  selected.value = findRecipe(target);
+}
+
+@visibleForTesting
+void debugResetCatalog() {
+  publishCatalog(
+    Map<String, Ingredient>.of(bundledIngredients),
+    List<Recipe>.of(bundledRecipes),
+  );
+}
+
+Map<dynamic, dynamic> _asMap(Object? document) {
+  if (document is! Map) throw const FormatException('Expected a YAML map');
   return document;
 }
 
-Map<String, Ingredient> _parseIngredients(YamlMap document) {
+Map<String, Ingredient> _parseIngredients(Map<dynamic, dynamic> document) {
   final ingredients = <String, Ingredient>{};
   for (final key in document.keys) {
     if (key is! String) {
       throw FormatException('Expected an ingredient name, got $key');
     }
     final value = document[key] as Object?;
-    if (value is! YamlMap) {
+    if (value is! Map) {
       throw FormatException('Expected data for $key');
     }
     final nutrition = _parseNutrition(_map(value, 'nutrition facts'));
+    final servingSize = _string(value, 'serving size');
     final ingredient = Ingredient(
       name: key,
-      servingSize: parseMeasure(_string(value, 'serving size')),
+      servingSize: parseMeasure(servingSize),
+      servingSizeText: servingSize,
       servings: _number(value, 'servings per container'),
       totalPrice: Price(_number(value, 'container price')),
       servingNutrition: nutrition.facts,
@@ -273,7 +319,7 @@ Map<String, Ingredient> _parseIngredients(YamlMap document) {
   return ingredients;
 }
 
-Map<String, Measure> _parseDailyValues(YamlMap document) {
+Map<String, Measure> _parseDailyValues(Map<dynamic, dynamic> document) {
   final measurements = <String, Measure>{};
   for (final key in document.keys) {
     if (key is! String) {
@@ -290,14 +336,14 @@ Map<String, Measure> _parseDailyValues(YamlMap document) {
   return measurements;
 }
 
-List<Recipe> _parseRecipes(YamlMap document, Map<String, Ingredient> ingredients) {
+List<Recipe> _parseRecipes(Map<dynamic, dynamic> document, Map<String, Ingredient> ingredients) {
   final recipes = <Recipe>[];
   for (final key in document.keys) {
     if (key is! String) {
       throw FormatException('Expected a recipe name, got $key');
     }
     final value = document[key] as Object?;
-    if (value is! YamlMap) {
+    if (value is! Map) {
       throw FormatException('Expected data for $key');
     }
     final rawServings = value['servings'] as Object?;
@@ -317,7 +363,7 @@ List<Recipe> _parseRecipes(YamlMap document, Map<String, Ingredient> ingredients
   return recipes;
 }
 
-bool _calculates(YamlMap recipe) {
+bool _calculates(Map<dynamic, dynamic> recipe) {
   for (final key in recipe.keys) {
     if (key is String && key.startsWith('calculate')) {
       return recipe[key] != false;
@@ -334,7 +380,7 @@ List<String> _tags(String text) {
 }
 
 List<RecipeLine> _lines(Object? value, Map<String, Ingredient> ingredients, String recipe) {
-  if (value is! YamlList) {
+  if (value is! List) {
     throw FormatException('Expected ingredients for $recipe');
   }
   final lines = <RecipeLine>[];
@@ -343,12 +389,12 @@ List<RecipeLine> _lines(Object? value, Map<String, Ingredient> ingredients, Stri
       lines.add(_line(item, ingredients));
       continue;
     }
-    if (item is! YamlMap || item.keys.length != 1) {
+    if (item is! Map || item.keys.length != 1) {
       throw FormatException('Unreadable ingredient in $recipe');
     }
     final group = item.keys.single as Object?;
     final children = item.values.single as Object?;
-    if (group is! String || children is! YamlList) {
+    if (group is! String || children is! List) {
       throw FormatException('Unreadable ingredient group in $recipe');
     }
     for (final child in children) {
@@ -396,13 +442,15 @@ String _canonicalName(String name) {
 RecipeLine recipeLineFor(String text, Map<String, Ingredient> pantry, {String? group}) =>
     _line(text, pantry, group: group);
 
-({NutritionFacts facts, Map<String, String> measurements}) _parseNutrition(YamlMap document) {
+({NutritionFacts facts, Map<String, String> measurements}) _parseNutrition(
+  Map<dynamic, dynamic> document,
+) {
   var calories = 0.0;
   final grams = <String, double>{};
   final measurements = <String, String>{};
   void add(String key, Object? value) {
     if (key == 'Vitamins') {
-      if (value is! YamlMap) {
+      if (value is! Map) {
         throw const FormatException('Expected a vitamins map');
       }
       for (final vitamin in value.keys) {
@@ -437,11 +485,7 @@ RecipeLine recipeLineFor(String text, Map<String, Ingredient> pantry, {String? g
 
 String _measurementString(Object? value, String label) {
   if (value is String) return value.trim();
-  if (value is int) return '$value';
-  if (value is double) {
-    if (value == value.roundToDouble()) return value.toStringAsFixed(0);
-    return value.toString();
-  }
+  if (value is num) return value.toDouble().plainNumber;
   throw FormatException('Expected a measurement for $label');
 }
 
@@ -481,27 +525,27 @@ double _toGrams(double value, String unit) => switch (unit) {
   _ => throw FormatException('Not a mass unit: $unit'),
 };
 
-String _string(YamlMap map, String field) {
+String _string(Map<dynamic, dynamic> map, String field) {
   final value = map[field] as Object?;
   if (value is String) return value;
   throw FormatException('Expected text for $field');
 }
 
-double _number(YamlMap map, String field) => _asDouble(map[field] as Object?, field);
+double _number(Map<dynamic, dynamic> map, String field) => _asDouble(map[field] as Object?, field);
 
 double _asDouble(Object? value, String label) {
   if (value is num) return value.toDouble();
   throw FormatException('Expected a number for $label');
 }
 
-YamlMap _map(YamlMap map, String field) {
+Map<dynamic, dynamic> _map(Map<dynamic, dynamic> map, String field) {
   final value = map[field] as Object?;
-  if (value is YamlMap) return value;
+  if (value is Map) return value;
   throw FormatException('Expected a map for $field');
 }
 
 List<String> _texts(Object? value, String label) {
-  if (value is! YamlList) {
+  if (value is! List) {
     throw FormatException('Expected a list for $label');
   }
   final texts = <String>[];
@@ -512,4 +556,225 @@ List<String> _texts(Object? value, String label) {
     texts.add(item);
   }
   return texts;
+}
+
+Ingredient parseIngredient(String name, Map<String, Object?> fields) {
+  final ingredient = _parseIngredients(<dynamic, dynamic>{name: fields})[name.toLowerCase()];
+  if (ingredient == null) throw FormatException('Could not read $name');
+  return ingredient;
+}
+
+Recipe parseRecipe(String name, Map<String, Object?> fields, Map<String, Ingredient> pantry) {
+  return _parseRecipes(<dynamic, dynamic>{name: fields}, pantry).single;
+}
+
+Recipe rebindRecipe(Recipe recipe, Map<String, Ingredient> pantry) {
+  return Recipe(
+    name: recipe.name,
+    tags: recipe.tags,
+    servings: recipe.servings,
+    servingsSpecified: recipe.servingsSpecified,
+    calculatesNutrition: recipe.calculatesNutrition,
+    lines: [for (final line in recipe.lines) recipeLineFor(line.text, pantry, group: line.group)],
+    directions: recipe.directions,
+  );
+}
+
+Map<String, Object?> ingredientDocument(Ingredient ingredient) {
+  return {
+    'serving size': ingredient.servingSizeText,
+    'servings per container': ingredient.servings,
+    'container price': ingredient.totalPrice.dollars,
+    'nutrition facts': {
+      'Calories': '${ingredient.servingNutrition.calories.plainNumber} Cal',
+      for (final MapEntry(:key, :value) in ingredient.measurementText.entries) key: value,
+    },
+  };
+}
+
+Map<String, Object?> recipeDocument(Recipe recipe) {
+  return {
+    'tags': recipe.tags.join(', '),
+    if (recipe.servingsSpecified) 'servings': recipe.servings,
+    if (!recipe.calculatesNutrition) 'calculate nutrition & price': false,
+    'ingredients': _ingredientItems(recipe.lines),
+    'directions': recipe.directions,
+  };
+}
+
+List<Object> _ingredientItems(List<RecipeLine> lines) {
+  final items = <Object>[];
+  String? group;
+  List<String>? grouped;
+  void flush() {
+    final name = group;
+    final texts = grouped;
+    if (name == null || texts == null) return;
+    items.add({name: texts});
+    group = null;
+    grouped = null;
+  }
+
+  for (final line in lines) {
+    if (line.group == null) {
+      flush();
+      items.add(line.text);
+      continue;
+    }
+    if (line.group != group) {
+      flush();
+      group = line.group;
+      grouped = <String>[];
+    }
+    grouped!.add(line.text);
+  }
+  flush();
+  return items;
+}
+
+String directionForField(String stored) => stored.replaceAll('<br>', '\n');
+
+String directionFromField(String field) {
+  final stored = field.replaceAll('\n', '<br>');
+  if (stored.replaceAll('<br>', '').trim().isEmpty) return '';
+  return stored;
+}
+
+Ingredient ingredientFromEditor({
+  required String name,
+  required String servingSize,
+  required String servings,
+  required String price,
+  required String calories,
+  required List<({String name, String amount})> nutrients,
+}) {
+  final ingredientName = _requiredName(name);
+  final servingText = servingSize.trim();
+  if (servingText.isEmpty) {
+    throw const FormatException('Enter a serving size, such as 1 cup');
+  }
+  try {
+    parseMeasure(servingText);
+  } on FormatException {
+    throw const FormatException('Enter a serving size, such as 1 cup');
+  }
+  final measurements = <String, String>{};
+  for (final nutrient in nutrients) {
+    final nutrientName = nutrient.name.trim();
+    final amount = nutrient.amount.trim();
+    if (nutrientName.isEmpty && amount.isEmpty) continue;
+    if (nutrientName.isEmpty || amount.isEmpty) {
+      throw const FormatException('Enter both a nutrient name and an amount');
+    }
+    if (nutrientName.toLowerCase() == 'calories') {
+      throw const FormatException('Enter calories in the calories field');
+    }
+    if (measurements.containsKey(nutrientName)) {
+      throw FormatException('$nutrientName is listed twice');
+    }
+    measurements[nutrientName] = amount;
+  }
+  return parseIngredient(ingredientName, {
+    'serving size': servingText,
+    'servings per container': _positiveNumber(servings, 'Servings per container'),
+    'container price': _price(price),
+    'nutrition facts': {'Calories': '${_calories(calories).plainNumber} Cal', ...measurements},
+  });
+}
+
+Recipe recipeFromEditor({
+  required String name,
+  required String tags,
+  required String servings,
+  required bool calculatesNutrition,
+  required String ingredientText,
+  required List<String> directions,
+}) {
+  final servingText = servings.trim();
+  return parseRecipe(_requiredName(name), {
+    'tags': tags,
+    if (servingText.isNotEmpty) 'servings': _positiveNumber(servingText, 'Servings'),
+    if (!calculatesNutrition) 'calculate nutrition & price': false,
+    'ingredients': _ingredientListFromText(ingredientText),
+    'directions': [
+      for (final direction in directions)
+        if (direction.trim().isNotEmpty) direction,
+    ],
+  }, ingredients);
+}
+
+List<Object> _ingredientListFromText(String text) {
+  final items = <Object>[];
+  String? group;
+  List<String>? grouped;
+  void flush() {
+    final name = group;
+    final texts = grouped;
+    if (name == null || texts == null) return;
+    items.add({name: texts});
+    group = null;
+    grouped = null;
+  }
+
+  for (final raw in text.split('\n')) {
+    final line = raw.trim();
+    if (line.isEmpty) continue;
+    if (_isGroupHeader(line)) {
+      flush();
+      group = line.substring(0, line.length - 1).trim();
+      grouped = <String>[];
+      continue;
+    }
+    if (group == null) {
+      items.add(line);
+    } else {
+      grouped!.add(line);
+    }
+  }
+  flush();
+  return items;
+}
+
+bool _isGroupHeader(String line) {
+  if (!line.endsWith(':')) return false;
+  final name = line.substring(0, line.length - 1).trim();
+  if (name.isEmpty) return false;
+  return tryParseAmount(name) == null;
+}
+
+String _requiredName(String text) {
+  final name = text.trim();
+  if (name.isEmpty) throw const FormatException('Enter a name');
+  return name;
+}
+
+double _positiveNumber(String text, String label) {
+  final trimmed = text.trim();
+  if (trimmed.isEmpty) throw FormatException('Enter $label');
+  final parsed = double.tryParse(trimmed);
+  if (parsed == null) throw FormatException('Enter $label as a number');
+  if (parsed <= 0) throw FormatException('$label must be greater than zero');
+  return parsed;
+}
+
+double _price(String text) {
+  final trimmed = text.trim().replaceAll(r'$', '').replaceAll(',', '');
+  if (trimmed.isEmpty) throw const FormatException('Enter a container price');
+  final parsed = double.tryParse(trimmed);
+  if (parsed == null) throw const FormatException('Enter a container price');
+  if (parsed < 0) throw const FormatException('Price cannot be negative');
+  return parsed;
+}
+
+double _calories(String text) {
+  final trimmed = text.trim();
+  if (trimmed.isEmpty) return 0;
+  final number = trimmed
+      .replaceAll(',', '')
+      .replaceAll(RegExp(r'cal', caseSensitive: false), '')
+      .trim();
+  final parsed = double.tryParse(number);
+  if (parsed == null) throw const FormatException('Enter calories as a number');
+  if (parsed < 0) throw const FormatException('Calories cannot be negative');
+  return parsed;
 }

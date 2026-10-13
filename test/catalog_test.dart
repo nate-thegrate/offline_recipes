@@ -122,7 +122,7 @@ void main() {
         if (food == null) continue;
         final parsed = tryParseAmount(line.text);
         expect(parsed, isNotNull, reason: reason);
-        final again = ingredients[food.name].used(parsed!.measure);
+        final again = ingredients[food.name.toLowerCase()]!.used(parsed!.measure);
         expect(again, isNotNull, reason: reason);
         expect(food.servings, again!.servings, reason: reason);
         expect(food.totalPrice.dollars, again.totalPrice.dollars, reason: reason);

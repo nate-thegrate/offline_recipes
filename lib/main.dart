@@ -4,6 +4,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:signal_widgets/signal_widgets.dart';
 
 import 'catalog.dart';
+import 'catalog_edit.dart';
 import 'catalog_view.dart';
 import 'settings.dart';
 
@@ -16,6 +17,7 @@ void main() async {
 
   SignalsObserver.instance = null;
   await (loadCatalog(), loadSettings()).wait;
+  await reloadCatalogEdits();
   runApp(const App());
 }
 

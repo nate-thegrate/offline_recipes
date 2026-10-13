@@ -3,14 +3,16 @@ import 'package:material_ui/material_ui.dart';
 import 'package:signal_widgets/signal_widgets.dart';
 
 import 'catalog.dart';
+import 'catalog_edit.dart';
 import 'food.dart';
+import 'ingredient_editor.dart';
 import 'measure.dart';
 import 'nutrition_label.dart';
+import 'recipe_editor.dart';
 import 'settings.dart';
 
 final selectedTags = setSignal(<String>{});
 final query = signal('');
-final selected = signal<Recipe?>(null);
 
 void _selectTag(String option) {
   if (HardwareKeyboard.instance.isShiftPressed) {
@@ -35,11 +37,25 @@ class CatalogPage extends StatelessWidget {
   static void _navigateRecipe(Recipe recipe) {
     final route = MaterialPageRoute<void>(
       builder: (context) => Scaffold(
-        appBar: AppBar(title: Text(titleCase(recipe.name)), actions: const [SettingsButton()]),
+        appBar: AppBar(
+          title: Text(titleCase(recipe.name)),
+          actions: [
+            _RecipeActions(recipe: recipe, popWhenDeleted: true),
+            const SettingsButton(),
+          ],
+        ),
         body: RecipeDetail(recipe: recipe, showTitle: false),
       ),
     );
     navigator.push(route);
+  }
+
+  static void _newRecipe() {
+    navigator.push(MaterialPageRoute<void>(builder: (context) => const RecipeEditor()));
+  }
+
+  static void _openIngredients() {
+    navigator.push(MaterialPageRoute<void>(builder: (context) => const IngredientListPage()));
   }
 
   @override
@@ -51,7 +67,21 @@ class CatalogPage extends StatelessWidget {
         excludeHeaderSemantics: true,
         notificationPredicate: (_) => false,
         title: const RecipeSearchField(),
-        actions: const [SettingsButton()],
+        actions: const [
+          IconButton(
+            key: ValueKey('new-recipe'),
+            tooltip: 'New recipe',
+            onPressed: _newRecipe,
+            icon: Icon(Icons.add),
+          ),
+          IconButton(
+            key: ValueKey('open-ingredients'),
+            tooltip: 'Ingredients',
+            onPressed: _openIngredients,
+            icon: Icon(Icons.kitchen_outlined),
+          ),
+          SettingsButton(),
+        ],
         titleSpacing: 8,
         actionsPadding: .only(right: 8),
       ),
@@ -166,11 +196,11 @@ class SettingsButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return IconButton(
-      key: const ValueKey('open-settings'),
+    return const IconButton(
+      key: ValueKey('open-settings'),
       tooltip: 'Settings',
       onPressed: _open,
-      icon: const Icon(Icons.settings_outlined),
+      icon: Icon(Icons.settings_outlined),
     );
   }
 }
@@ -261,6 +291,49 @@ class SelectedRecipe extends SignalWidget {
   }
 }
 
+class _RecipeActions extends SignalWidget {
+  const new({required this.recipe, required this.popWhenDeleted});
+
+  final Recipe recipe;
+  final bool popWhenDeleted;
+
+  @override
+  Widget build(BuildContext context) {
+    final recipe = findRecipe(this.recipe.name) ?? this.recipe;
+    return Row(
+      mainAxisSize: .min,
+      children: [
+        IconButton(
+          key: const ValueKey('edit-recipe'),
+          tooltip: 'Edit recipe',
+          onPressed: () {
+            navigator.push(
+              MaterialPageRoute<void>(builder: (context) => RecipeEditor(recipe: recipe)),
+            );
+          },
+          icon: const Icon(Icons.edit_outlined),
+        ),
+        IconButton(
+          key: const ValueKey('delete-recipe'),
+          tooltip: 'Delete recipe',
+          onPressed: () async {
+            final confirmed = await confirmDelete(
+              context,
+              'Delete ${titleCase(recipe.name)}?',
+              'This removes the recipe from the cookbook.',
+            );
+            if (!confirmed || !context.mounted) return;
+            await deleteRecipe(recipe.name);
+            if (!context.mounted || !popWhenDeleted) return;
+            navigator.pop();
+          },
+          icon: const Icon(Icons.delete_outlined),
+        ),
+      ],
+    );
+  }
+}
+
 class RecipeDetail extends SignalWidget {
   const new({required this.recipe, required this.showTitle, super.key});
 
@@ -269,6 +342,7 @@ class RecipeDetail extends SignalWidget {
 
   @override
   Widget build(BuildContext context) {
+    final recipe = findRecipe(this.recipe.name) ?? this.recipe;
     final names = unitNames.value;
     final nutrition = showNutrition.value;
     final theme = Theme.of(context);
@@ -276,7 +350,13 @@ class RecipeDetail extends SignalWidget {
     String? previousGroup;
     final children = <Widget>[
       if (showTitle) ...[
-        Text(titleCase(recipe.name), style: textTheme.headlineMedium),
+        Row(
+          crossAxisAlignment: .start,
+          children: [
+            Expanded(child: Text(titleCase(recipe.name), style: textTheme.headlineMedium)),
+            _RecipeActions(recipe: recipe, popWhenDeleted: false),
+          ],
+        ),
         const SizedBox(height: 8),
       ],
       Text(recipeSubtitle(recipe), style: textTheme.bodyMedium),
@@ -320,7 +400,7 @@ class RecipeDetail extends SignalWidget {
         highlightColor: Colors.transparent,
       ),
       child: ListView(
-        key: ValueKey(recipe),
+        key: ValueKey(recipe.name),
         padding: const .fromLTRB(20, 16, 20, 32),
         children: children,
       ),
@@ -359,9 +439,7 @@ class _IngredientTileState extends State<_IngredientTile>
 
     return CheckboxListTile(
       value: checked,
-      onChanged: (_) {
-        _checked.value = !_checked.value;
-      },
+      onChanged: (_) => _checked.value = !_checked.value,
       overlayColor: .all(Colors.transparent),
       controlAffinity: .leading,
       contentPadding: .zero,
@@ -382,9 +460,8 @@ class _PriceSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (!recipe.servingsSpecified) {
-      return _Stat(label: 'Recipe', price: recipe.totalPrice);
-    }
+    if (!recipe.servingsSpecified) return _Stat(label: 'Recipe', price: recipe.totalPrice);
+
     return Row(
       children: [
         Expanded(
@@ -406,13 +483,13 @@ class _Stat extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final textTheme = TextTheme.of(context);
     return Column(
       crossAxisAlignment: .start,
       children: [
-        Text(label, style: theme.textTheme.labelLarge),
+        Text(label, style: textTheme.labelLarge),
         const SizedBox(height: 4),
-        Text(price.toString(), style: theme.textTheme.headlineSmall),
+        Text(price.toString(), style: textTheme.headlineSmall),
       ],
     );
   }
@@ -421,9 +498,8 @@ class _Stat extends StatelessWidget {
 String recipeSubtitle(Recipe recipe) {
   final parts = <String>[recipe.tags.map(titleCase).join(', ')];
   if (recipe.servingsSpecified) {
-    final count = _formatCount(recipe.servings);
     final noun = recipe.servings == 1 ? 'serving' : 'servings';
-    parts.add('$count $noun');
+    parts.add('${recipe.servings.plainNumber} $noun');
   }
   return parts.where((part) => part.isNotEmpty).join(' · ');
 }
@@ -441,11 +517,6 @@ String titleCase(String text) {
             .join('-');
       })
       .join(' ');
-}
-
-String _formatCount(double value) {
-  if (value == value.roundToDouble()) return value.toStringAsFixed(0);
-  return value.toString();
 }
 
 TextSpan _directionSpan(String source) {

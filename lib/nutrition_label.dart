@@ -42,7 +42,7 @@ class NutritionLabel extends StatelessWidget {
     }
     return ._(
       key: key,
-      yieldText: 'recipe yields ${_count(recipe.servings)} servings',
+      yieldText: 'recipe yields ${recipe.servings.plainNumber} servings',
       servingCalories: labelCalories(calories / recipe.servings),
       recipeCalories: labelCalories(calories),
       macros: [
@@ -219,11 +219,6 @@ String labelCalories(double amount) {
   if (amount < 5) return '0';
   final increment = amount <= 50 ? 5 : 10;
   return '${(amount / increment).round() * increment}';
-}
-
-String _count(double value) {
-  if (value == value.roundToDouble()) return value.toStringAsFixed(0);
-  return value.toString();
 }
 
 typedef _Rule = ({double thickness, double bottom});
