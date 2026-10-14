@@ -12,7 +12,6 @@ import 'recipe_editor.dart';
 import 'settings.dart';
 
 final selectedTags = setSignal(<String>{});
-final query = signal('');
 
 void _selectTag(String option) {
   if (HardwareKeyboard.instance.isShiftPressed) {
@@ -116,12 +115,7 @@ class RecipeBrowser extends StatelessWidget {
         Expanded(
           child: SignalBuilder(
             builder: (context) {
-              final requiredTags = selectedTags.value;
-              final text = query.value;
-              final matching = [
-                for (final recipe in recipes)
-                  if (recipe.matches(requiredTags, text)) recipe,
-              ];
+              final matching = recipeMatcher.asSignal.value;
               if (matching.isEmpty) {
                 return const Center(child: Text('No recipes match.'));
               }
@@ -205,27 +199,14 @@ class SettingsButton extends StatelessWidget {
   }
 }
 
-class RecipeSearchField extends StatefulWidget {
+class RecipeSearchField extends StatelessWidget {
   const new({super.key});
-
-  @override
-  State<RecipeSearchField> createState() => _RecipeSearchFieldState();
-}
-
-class _RecipeSearchFieldState extends State<RecipeSearchField> {
-  late final TextEditingController _controller = TextEditingController();
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
     return TextField(
       key: const ValueKey('recipe-search'),
-      controller: _controller,
+      controller: recipeMatcher.controller,
       textInputAction: .search,
       decoration: InputDecoration(
         hintText: 'Search recipes',
@@ -233,7 +214,6 @@ class _RecipeSearchFieldState extends State<RecipeSearchField> {
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(28)),
         isDense: true,
       ),
-      onChanged: (value) => query.value = value,
     );
   }
 }

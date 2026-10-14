@@ -14,39 +14,54 @@ class IngredientListPage extends SignalStatefulWidget {
   State<IngredientListPage> createState() => _IngredientListPageState();
 }
 
-class _MatchingIngredients with ChangeNotifier implements ValueListenable<List<Ingredient>> {
-  new() {
-    controller.addListener(_computeValue);
-    _unsubscribe = ingredients.subscribe(_computeValue);
+final ingredientMatcher = MatchingItems<Ingredient>._(_matchingIngredients, {ingredients});
+List<Ingredient> _matchingIngredients(String query) {
+  return [
+    for (final ingredient in ingredients.peek())
+      if (ingredient.name.toLowerCase().contains(query)) ingredient,
+  ]..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+}
+
+final recipeMatcher = MatchingItems<Recipe>._(_matchingRecipes, {recipes, selectedTags});
+List<Recipe> _matchingRecipes(String query) {
+  final requiredTags = selectedTags.peek();
+  return [
+    for (final recipe in recipes.peek())
+      if (recipe.matches(requiredTags, query)) recipe,
+  ];
+}
+
+class MatchingItems<T> with ChangeNotifier implements ValueListenable<List<T>> {
+  new _(this.getMatching, Iterable<ReadonlySignal<Object?>> signals) {
+    controller.addListener(_compute);
+    for (final signal in signals) {
+      _subscriptions.add(signal.subscribe(_compute));
+    }
   }
 
+  final List<T> Function(String query) getMatching;
   final controller = TextEditingController();
   late final asSignal = toSignal();
-  late final VoidCallback _unsubscribe;
+  final _subscriptions = <VoidCallback>{};
+  List<T>? _value;
 
   @override
-  List<Ingredient> get value => _value ?? _computeValue();
-  List<Ingredient>? _value;
-  Set<Ingredient>? _cached;
-  List<Ingredient> _computeValue([_]) {
-    var matching = ingredients.peek().values;
-    final query = controller.text.trim().toLowerCase();
-    if (query.isNotEmpty) {
-      matching = matching.where((ingredient) => ingredient.name.toLowerCase().contains(query));
-    }
-    final set = Set.of(matching);
-    if (setEquals(set, _cached)) return _value!;
+  List<T> get value => _value ?? _compute();
 
-    final newList = _value = List.of(set)
-      ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
-    if (_cached != null) notifyListeners();
-    _cached = set;
-    return newList;
+  List<T> _compute([_]) {
+    final matching = getMatching(controller.text.trim().toLowerCase());
+    if (listEquals(_value, matching)) return _value!;
+    final previous = _value;
+    _value = matching;
+    if (previous != null) notifyListeners();
+    return matching;
   }
 
   @override
   void dispose() {
-    _unsubscribe();
+    for (final unsubscribe in _subscriptions) {
+      unsubscribe();
+    }
     controller.dispose();
     asSignal.dispose();
     super.dispose();
@@ -54,14 +69,6 @@ class _MatchingIngredients with ChangeNotifier implements ValueListenable<List<I
 }
 
 class _IngredientListPageState extends State<IngredientListPage> {
-  final _matching = _MatchingIngredients();
-
-  @override
-  void dispose() {
-    _matching.dispose();
-    super.dispose();
-  }
-
   static void _open([Ingredient? ingredient]) {
     navigator.push(
       MaterialPageRoute<void>(builder: (context) => IngredientEditor(ingredient: ingredient)),
@@ -70,7 +77,7 @@ class _IngredientListPageState extends State<IngredientListPage> {
 
   @override
   Widget build(BuildContext context) {
-    final matching = _matching.asSignal.value;
+    final matching = ingredientMatcher.asSignal.value;
     return Scaffold(
       appBar: AppBar(
         title: const Text('Ingredients'),
@@ -89,7 +96,7 @@ class _IngredientListPageState extends State<IngredientListPage> {
             padding: const .fromLTRB(16, 8, 16, 8),
             child: TextField(
               key: const ValueKey('ingredient-search'),
-              controller: _matching.controller,
+              controller: ingredientMatcher.controller,
               decoration: InputDecoration(
                 hintText: 'Search ingredients',
                 prefixIcon: const Icon(Icons.search),

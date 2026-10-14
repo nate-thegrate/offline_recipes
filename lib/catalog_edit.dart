@@ -80,14 +80,21 @@ Future<void> reloadCatalogEdits() async {
 }
 
 void applyCatalogEdits(CatalogEdits edits, {String? focus}) {
-  final pantry = Map<String, Ingredient>.of(bundledIngredients);
-  for (final name in edits.deletedIngredients) {
-    pantry.remove(name.toLowerCase());
-  }
+  final pantry = <Ingredient>[
+    for (final ingredient in bundledIngredients)
+      if (!edits.deletedIngredients.contains(ingredient.name.toLowerCase())) ingredient,
+  ];
   for (final MapEntry(:key, :value) in edits.ingredients.entries) {
     if (edits.deletedIngredients.contains(key.toLowerCase())) continue;
     final ingredient = parseIngredient(key, value);
-    pantry[ingredient.name.toLowerCase()] = ingredient;
+    final index = pantry.indexWhere(
+      (item) => item.name.toLowerCase() == ingredient.name.toLowerCase(),
+    );
+    if (index == -1) {
+      pantry.add(ingredient);
+    } else {
+      pantry[index] = ingredient;
+    }
   }
 
   final next = <Recipe>[
@@ -109,8 +116,7 @@ void applyCatalogEdits(CatalogEdits edits, {String? focus}) {
 
 Future<void> saveIngredient(Ingredient ingredient, {String? previousName}) async {
   final name = ingredient.name;
-  if (previousName?.toLowerCase() != name.toLowerCase() &&
-      ingredients[name.toLowerCase()] != null) {
+  if (previousName?.toLowerCase() != name.toLowerCase() && findIngredient(name) != null) {
     throw FormatException('An ingredient named $name already exists');
   }
   final edits = await readCatalogEdits();

@@ -224,9 +224,18 @@ class Recipe implements Food {
   }
 }
 
-/// Keyed by the ingredient's lowercase name.
-final ingredients = mapSignal(<String, Ingredient>{});
+final ingredients = listSignal(<Ingredient>[]);
 final recipes = listSignal(<Recipe>[]);
+
+Ingredient? findIngredient(String name) => _namedIngredient(ingredients, name);
+
+Ingredient? _namedIngredient(Iterable<Ingredient> pantry, String name) {
+  final key = name.toLowerCase();
+  for (final ingredient in pantry) {
+    if (ingredient.name.toLowerCase() == key) return ingredient;
+  }
+  return null;
+}
 
 Recipe? findRecipe(String name) {
   for (final recipe in recipes) {
@@ -238,10 +247,10 @@ Recipe? findRecipe(String name) {
 /// Recipe open in the browser. Replaced when a catalog edit rebuilds that recipe.
 final selected = signal<Recipe?>(null);
 
-final Map<String, Ingredient> _bundledIngredients = {};
+final List<Ingredient> _bundledIngredients = [];
 final List<Recipe> _bundledRecipes = [];
 
-Map<String, Ingredient> get bundledIngredients => Map.unmodifiable(_bundledIngredients);
+List<Ingredient> get bundledIngredients => List.unmodifiable(_bundledIngredients);
 List<Recipe> get bundledRecipes => List.unmodifiable(_bundledRecipes);
 
 late final Map<String, Measure> dailyValues;
@@ -269,10 +278,10 @@ Future<void> loadCatalog() async {
   _bundledRecipes
     ..clear()
     ..addAll(parsedRecipes);
-  publishCatalog(Map<String, Ingredient>.of(parsed), List<Recipe>.of(parsedRecipes));
+  publishCatalog(List<Ingredient>.of(parsed), List<Recipe>.of(parsedRecipes));
 }
 
-void publishCatalog(Map<String, Ingredient> pantry, List<Recipe> next, {String? focus}) {
+void publishCatalog(List<Ingredient> pantry, List<Recipe> next, {String? focus}) {
   ingredients.value = pantry;
   recipes.value = next;
   final target = focus ?? selected.peek()?.name;
@@ -282,10 +291,7 @@ void publishCatalog(Map<String, Ingredient> pantry, List<Recipe> next, {String? 
 
 @visibleForTesting
 void debugResetCatalog() {
-  publishCatalog(
-    Map<String, Ingredient>.of(bundledIngredients),
-    List<Recipe>.of(bundledRecipes),
-  );
+  publishCatalog(List<Ingredient>.of(bundledIngredients), List<Recipe>.of(bundledRecipes));
 }
 
 Map<dynamic, dynamic> _asMap(Object? document) {
@@ -293,8 +299,8 @@ Map<dynamic, dynamic> _asMap(Object? document) {
   return document;
 }
 
-Map<String, Ingredient> _parseIngredients(Map<dynamic, dynamic> document) {
-  final ingredients = <String, Ingredient>{};
+List<Ingredient> _parseIngredients(Map<dynamic, dynamic> document) {
+  final pantry = <String, Ingredient>{};
   for (final key in document.keys) {
     if (key is! String) {
       throw FormatException('Expected an ingredient name, got $key');
@@ -314,9 +320,9 @@ Map<String, Ingredient> _parseIngredients(Map<dynamic, dynamic> document) {
       servingNutrition: nutrition.facts,
       measurementText: nutrition.measurements,
     );
-    ingredients[key.toLowerCase()] = ingredient;
+    pantry[key.toLowerCase()] = ingredient;
   }
-  return ingredients;
+  return pantry.values.toList();
 }
 
 Map<String, Measure> _parseDailyValues(Map<dynamic, dynamic> document) {
@@ -336,7 +342,7 @@ Map<String, Measure> _parseDailyValues(Map<dynamic, dynamic> document) {
   return measurements;
 }
 
-List<Recipe> _parseRecipes(Map<dynamic, dynamic> document, Map<String, Ingredient> ingredients) {
+List<Recipe> _parseRecipes(Map<dynamic, dynamic> document, List<Ingredient> pantry) {
   final recipes = <Recipe>[];
   for (final key in document.keys) {
     if (key is! String) {
@@ -355,7 +361,7 @@ List<Recipe> _parseRecipes(Map<dynamic, dynamic> document, Map<String, Ingredien
         servings: servingsSpecified ? _asDouble(rawServings, '$key servings') : 1,
         servingsSpecified: servingsSpecified,
         calculatesNutrition: _calculates(value),
-        lines: _lines(value['ingredients'] as Object?, ingredients, key),
+        lines: _lines(value['ingredients'] as Object?, pantry, key),
         directions: _texts(value['directions'] as Object?, '$key directions'),
       ),
     );
@@ -379,14 +385,14 @@ List<String> _tags(String text) {
   ];
 }
 
-List<RecipeLine> _lines(Object? value, Map<String, Ingredient> ingredients, String recipe) {
+List<RecipeLine> _lines(Object? value, List<Ingredient> pantry, String recipe) {
   if (value is! List) {
     throw FormatException('Expected ingredients for $recipe');
   }
   final lines = <RecipeLine>[];
   for (final item in value) {
     if (item is String) {
-      lines.add(_line(item, ingredients));
+      lines.add(_line(item, pantry));
       continue;
     }
     if (item is! Map || item.keys.length != 1) {
@@ -401,19 +407,19 @@ List<RecipeLine> _lines(Object? value, Map<String, Ingredient> ingredients, Stri
       if (child is! String) {
         throw FormatException('Expected text in $recipe $group');
       }
-      lines.add(_line(child, ingredients, group: group));
+      lines.add(_line(child, pantry, group: group));
     }
   }
   return lines;
 }
 
-RecipeLine _line(String text, Map<String, Ingredient> ingredients, {String? group}) {
+RecipeLine _line(String text, List<Ingredient> pantry, {String? group}) {
   final parsed = tryParseAmount(text);
   final name = parsed == null || parsed.name.isEmpty ? text : parsed.name;
   final ignored = ignoredIngredientNames.contains(_normalized(name));
   IngredientAmount? food;
   if (parsed != null && parsed.name.isNotEmpty) {
-    food = ingredients[_canonicalName(parsed.name)]?.used(parsed.measure);
+    food = _namedIngredient(pantry, _canonicalName(parsed.name))?.used(parsed.measure);
   }
   return RecipeLine(
     text,
@@ -439,7 +445,7 @@ String _canonicalName(String name) {
 }
 
 @visibleForTesting
-RecipeLine recipeLineFor(String text, Map<String, Ingredient> pantry, {String? group}) =>
+RecipeLine recipeLineFor(String text, List<Ingredient> pantry, {String? group}) =>
     _line(text, pantry, group: group);
 
 ({NutritionFacts facts, Map<String, String> measurements}) _parseNutrition(
@@ -559,16 +565,14 @@ List<String> _texts(Object? value, String label) {
 }
 
 Ingredient parseIngredient(String name, Map<String, Object?> fields) {
-  final ingredient = _parseIngredients(<dynamic, dynamic>{name: fields})[name.toLowerCase()];
-  if (ingredient == null) throw FormatException('Could not read $name');
-  return ingredient;
+  return _parseIngredients(<dynamic, dynamic>{name: fields}).single;
 }
 
-Recipe parseRecipe(String name, Map<String, Object?> fields, Map<String, Ingredient> pantry) {
+Recipe parseRecipe(String name, Map<String, Object?> fields, List<Ingredient> pantry) {
   return _parseRecipes(<dynamic, dynamic>{name: fields}, pantry).single;
 }
 
-Recipe rebindRecipe(Recipe recipe, Map<String, Ingredient> pantry) {
+Recipe rebindRecipe(Recipe recipe, List<Ingredient> pantry) {
   return Recipe(
     name: recipe.name,
     tags: recipe.tags,

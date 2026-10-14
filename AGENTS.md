@@ -38,6 +38,8 @@ void foo(Rect rect) {
 }
 ```
 
+Top-level and static variables initialize on first read. A `final` with an initializer at its declaration is already lazy, so library load does not run that initializer. Add `late` only when a non-nullable variable is not initialized at its declaration.
+
 In most cases, avoid defining global or `static` fields that are only used once; inline them at the use site.
 
 Flutter hot reload cannot replace a closure captured in a `final` field initializer. Prefer using a tear-off; trivial one-line projections can stay inlined. (A tear-off is sometimes necessary to enable a `const` constructor: global functions and `static` methods can be used in a constant context whereas inline callbacks cannot.)

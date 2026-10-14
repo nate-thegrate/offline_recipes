@@ -3,6 +3,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:offline_recipes/catalog.dart';
 import 'package:offline_recipes/catalog_edit.dart';
 import 'package:offline_recipes/catalog_view.dart';
+import 'package:offline_recipes/ingredient_editor.dart';
 import 'package:offline_recipes/main.dart';
 import 'package:offline_recipes/measure.dart';
 import 'package:offline_recipes/settings.dart';
@@ -18,7 +19,7 @@ void main() {
     debugResetSettings();
     selected.value = null;
     selectedTags.clear();
-    query.value = '';
+    recipeMatcher.controller.clear();
     debugResetCatalog();
   });
 
@@ -100,7 +101,7 @@ void main() {
     final again = findRecipe('oat latte')!;
     expect(again.totalPrice.dollars, closeTo(1.5, 1e-9));
     expect(again.totalNutrition.calories, closeTo(240, 1e-9));
-    expect(ingredients['test oat milk']!.totalPrice.dollars, closeTo(3, 1e-9));
+    expect(findIngredient('test oat milk')!.totalPrice.dollars, closeTo(3, 1e-9));
     expect(recipes.length, before + 1);
   });
 
@@ -114,7 +115,7 @@ void main() {
     final recipe = findRecipe('oat latte')!;
     expect(recipe.totalPrice.dollars, closeTo(3, 1e-9));
     expect(recipe.totalNutrition.calories, closeTo(calories, 1e-9));
-    expect(ingredients['test oat milk']!.servingPrice.dollars, closeTo(1.5, 1e-9));
+    expect(findIngredient('test oat milk')!.servingPrice.dollars, closeTo(1.5, 1e-9));
   });
 
   test('deleting an ingredient drops it out of recipes that use it', () async {
@@ -127,15 +128,15 @@ void main() {
     expect(recipe.lines.single.food, isNull);
     expect(recipe.isPriced, isFalse);
     expect(recipe.totalPrice.dollars, 0);
-    expect(ingredients['test oat milk'], isNull);
+    expect(findIngredient('test oat milk'), isNull);
 
     await reloadCatalogEdits();
-    expect(ingredients['test oat milk'], isNull);
+    expect(findIngredient('test oat milk'), isNull);
     expect(findRecipe('oat latte')!.lines.single.food, isNull);
   });
 
   test('updating a built-in ingredient reprices the recipes that use it', () async {
-    final flour = ingredients['whole wheat flour']!;
+    final flour = findIngredient('whole wheat flour')!;
     final cornbread = findRecipe('cornbread')!;
     expect(cornbread.isPriced, isTrue);
     final line = cornbread.lines.firstWhere((item) => item.food?.name == flour.name);
@@ -173,7 +174,7 @@ void main() {
 
     await reloadCatalogEdits();
     expect(findRecipe('cornbread')!.totalPrice.dollars, closeTo(oldTotal - oldLine, 1e-6));
-    expect(ingredients['whole wheat flour']!.totalPrice.dollars, 0);
+    expect(findIngredient('whole wheat flour')!.totalPrice.dollars, 0);
   });
 
   test('a deleted built-in recipe stays gone, and another recipe stays selected', () async {
@@ -328,7 +329,7 @@ void main() {
     final updated = findRecipe('cornbread')!;
     expect(updated.servingPrice.toString(), isNot(previousPrice));
     expect(updated.totalNutrition.calories, closeTo(calories, 1e-6));
-    expect(ingredients['whole wheat flour']!.totalPrice.dollars, 0);
+    expect(findIngredient('whole wheat flour')!.totalPrice.dollars, 0);
 
     await tester.enterText(find.byKey(const ValueKey('recipe-search')), 'cornbread');
     await tester.pumpAndSettle();

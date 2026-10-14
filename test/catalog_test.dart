@@ -51,7 +51,7 @@ void main() {
     expect(ingredientAliases, isNotEmpty);
     for (final MapEntry(:key, :value) in ingredientAliases.entries) {
       final ingredient = _ingredient(name: value);
-      final line = recipeLineFor('1 cup $key', {value: ingredient});
+      final line = recipeLineFor('1 cup $key', [ingredient]);
 
       expect(line.food, isNotNull, reason: key);
       expect(line.food!.name, value, reason: key);
@@ -61,12 +61,12 @@ void main() {
 
     expect(ignoredIngredientNames, isNotEmpty);
     for (final name in ignoredIngredientNames) {
-      expect(recipeLineFor(name, const {}).ignored, isTrue, reason: name);
-      expect(recipeLineFor('2 cups $name', const {}).ignored, isTrue, reason: name);
+      expect(recipeLineFor(name, const []).ignored, isTrue, reason: name);
+      expect(recipeLineFor('2 cups $name', const []).ignored, isTrue, reason: name);
     }
 
     final ingredient = _ingredient();
-    final pantry = {ingredient.name.toLowerCase(): ingredient};
+    final pantry = [ingredient];
     final plain = recipeLineFor('1 cup ${ingredient.name}', pantry, group: 'icing');
     expect(plain.group, 'icing');
     expect(plain.optional, isFalse);
@@ -122,7 +122,7 @@ void main() {
         if (food == null) continue;
         final parsed = tryParseAmount(line.text);
         expect(parsed, isNotNull, reason: reason);
-        final again = ingredients[food.name.toLowerCase()]!.used(parsed!.measure);
+        final again = findIngredient(food.name)!.used(parsed!.measure);
         expect(again, isNotNull, reason: reason);
         expect(food.servings, again!.servings, reason: reason);
         expect(food.totalPrice.dollars, again.totalPrice.dollars, reason: reason);
