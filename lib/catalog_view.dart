@@ -11,8 +11,6 @@ import 'nutrition_label.dart';
 import 'recipe_editor.dart';
 import 'settings.dart';
 
-final selectedTags = setSignal(<String>{});
-
 void _selectTag(String option) {
   if (HardwareKeyboard.instance.isShiftPressed) {
     _toggleTag(option);
@@ -115,7 +113,7 @@ class RecipeBrowser extends StatelessWidget {
         Expanded(
           child: SignalBuilder(
             builder: (context) {
-              final matching = recipeMatcher.asSignal.value;
+              final matching = recipes.matching.value;
               if (matching.isEmpty) {
                 return const Center(child: Text('No recipes match.'));
               }
@@ -206,7 +204,7 @@ class RecipeSearchField extends StatelessWidget {
   Widget build(BuildContext context) {
     return TextField(
       key: const ValueKey('recipe-search'),
-      controller: recipeMatcher.controller,
+      controller: recipes.controller,
       textInputAction: .search,
       decoration: InputDecoration(
         hintText: 'Search recipes',

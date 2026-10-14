@@ -4,6 +4,7 @@ import 'package:signal_widgets/signal_widgets.dart';
 import 'package:yaml/yaml.dart';
 
 import 'food.dart';
+import 'matching_list.dart';
 import 'measure.dart';
 
 const _microgram = '\u00B5g';
@@ -224,8 +225,25 @@ class Recipe implements Food {
   }
 }
 
-final ingredients = listSignal(<Ingredient>[]);
-final recipes = listSignal(<Recipe>[]);
+final ingredients = MatchingList(_matchingIngredients);
+List<Ingredient> _matchingIngredients(String query) {
+  return [
+    for (final ingredient in ingredients)
+      if (ingredient.name.toLowerCase().contains(query)) ingredient,
+  ]..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+}
+
+final recipes = MatchingList(_matchingRecipes);
+List<Recipe> _matchingRecipes(String query) {
+  final requiredTags = selectedTags.value;
+  return [
+    for (final recipe in recipes)
+      if (recipe.matches(requiredTags, query)) recipe,
+  ];
+}
+
+/// Tags a recipe must have to show in the browser. Empty shows every recipe.
+final selectedTags = setSignal(<String>{});
 
 Ingredient? findIngredient(String name) => _namedIngredient(ingredients, name);
 

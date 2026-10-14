@@ -2,8 +2,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:offline_recipes/catalog.dart';
 import 'package:offline_recipes/catalog_edit.dart';
-import 'package:offline_recipes/catalog_view.dart';
-import 'package:offline_recipes/ingredient_editor.dart';
 import 'package:offline_recipes/main.dart';
 import 'package:offline_recipes/measure.dart';
 import 'package:offline_recipes/settings.dart';
@@ -19,7 +17,7 @@ void main() {
     debugResetSettings();
     selected.value = null;
     selectedTags.clear();
-    recipeMatcher.controller.clear();
+    recipes.controller.clear();
     debugResetCatalog();
   });
 

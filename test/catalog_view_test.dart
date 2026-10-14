@@ -4,7 +4,6 @@ import 'package:material_ui/material_ui.dart';
 import 'package:offline_recipes/catalog.dart';
 import 'package:offline_recipes/catalog_view.dart';
 import 'package:offline_recipes/food.dart';
-import 'package:offline_recipes/ingredient_editor.dart';
 import 'package:offline_recipes/main.dart';
 import 'package:offline_recipes/measure.dart';
 import 'package:offline_recipes/nutrition_label.dart';
@@ -19,7 +18,7 @@ void main() {
     await loadSettings();
     debugResetSettings();
     selectedTags.clear();
-    recipeMatcher.controller.clear();
+    recipes.controller.clear();
     selected.value = null;
   });
 

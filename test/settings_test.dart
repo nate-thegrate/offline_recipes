@@ -2,7 +2,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:offline_recipes/catalog.dart';
 import 'package:offline_recipes/catalog_view.dart';
-import 'package:offline_recipes/ingredient_editor.dart';
 import 'package:offline_recipes/main.dart';
 import 'package:offline_recipes/measure.dart';
 import 'package:offline_recipes/settings.dart';
@@ -17,7 +16,7 @@ void main() {
     await loadSettings();
     debugResetSettings();
     selectedTags.clear();
-    recipeMatcher.controller.clear();
+    recipes.controller.clear();
     selected.value = null;
   });
 
@@ -69,7 +68,7 @@ void main() {
     await _openSettings(tester);
     expect(selected.value, recipe);
     expect(selectedTags.value, {tagName});
-    expect(recipeMatcher.controller.text, recipe.name);
+    expect(recipes.controller.text, recipe.name);
 
     await _closeSettings(tester);
     expect(_tile(tester, recipe.name).selected, isTrue);

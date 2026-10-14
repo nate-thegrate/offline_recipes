@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:signal_widgets/signal_widgets.dart';
 
@@ -14,60 +13,6 @@ class IngredientListPage extends SignalStatefulWidget {
   State<IngredientListPage> createState() => _IngredientListPageState();
 }
 
-final ingredientMatcher = MatchingItems<Ingredient>._(_matchingIngredients, {ingredients});
-List<Ingredient> _matchingIngredients(String query) {
-  return [
-    for (final ingredient in ingredients.peek())
-      if (ingredient.name.toLowerCase().contains(query)) ingredient,
-  ]..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
-}
-
-final recipeMatcher = MatchingItems<Recipe>._(_matchingRecipes, {recipes, selectedTags});
-List<Recipe> _matchingRecipes(String query) {
-  final requiredTags = selectedTags.peek();
-  return [
-    for (final recipe in recipes.peek())
-      if (recipe.matches(requiredTags, query)) recipe,
-  ];
-}
-
-class MatchingItems<T> with ChangeNotifier implements ValueListenable<List<T>> {
-  new _(this.getMatching, Iterable<ReadonlySignal<Object?>> signals) {
-    controller.addListener(_compute);
-    for (final signal in signals) {
-      _subscriptions.add(signal.subscribe(_compute));
-    }
-  }
-
-  final List<T> Function(String query) getMatching;
-  final controller = TextEditingController();
-  late final asSignal = toSignal();
-  final _subscriptions = <VoidCallback>{};
-  List<T>? _value;
-
-  @override
-  List<T> get value => _value ?? _compute();
-
-  List<T> _compute([_]) {
-    final matching = getMatching(controller.text.trim().toLowerCase());
-    if (listEquals(_value, matching)) return _value!;
-    final previous = _value;
-    _value = matching;
-    if (previous != null) notifyListeners();
-    return matching;
-  }
-
-  @override
-  void dispose() {
-    for (final unsubscribe in _subscriptions) {
-      unsubscribe();
-    }
-    controller.dispose();
-    asSignal.dispose();
-    super.dispose();
-  }
-}
-
 class _IngredientListPageState extends State<IngredientListPage> {
   static void _open([Ingredient? ingredient]) {
     navigator.push(
@@ -77,7 +22,7 @@ class _IngredientListPageState extends State<IngredientListPage> {
 
   @override
   Widget build(BuildContext context) {
-    final matching = ingredientMatcher.asSignal.value;
+    final matching = ingredients.matching.value;
     return Scaffold(
       appBar: AppBar(
         title: const Text('Ingredients'),
@@ -96,7 +41,7 @@ class _IngredientListPageState extends State<IngredientListPage> {
             padding: const .fromLTRB(16, 8, 16, 8),
             child: TextField(
               key: const ValueKey('ingredient-search'),
-              controller: ingredientMatcher.controller,
+              controller: ingredients.controller,
               decoration: InputDecoration(
                 hintText: 'Search ingredients',
                 prefixIcon: const Icon(Icons.search),
