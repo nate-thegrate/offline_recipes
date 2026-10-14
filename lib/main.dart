@@ -3,10 +3,9 @@ import 'package:marionette_flutter/marionette_flutter.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:signal_widgets/signal_widgets.dart';
 
-import 'catalog.dart';
-import 'catalog_edit.dart';
-import 'catalog_view.dart';
-import 'settings.dart';
+import 'catalog/catalog.dart';
+import 'catalog_view/catalog_view.dart';
+import 'settings/settings.dart';
 
 void main() async {
   if (kDebugMode) {

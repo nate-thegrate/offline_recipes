@@ -1,7 +1,4 @@
-import 'package:material_ui/material_ui.dart';
-
-import 'catalog.dart';
-import 'measure.dart';
+part of '../catalog_view.dart';
 
 const _black = Color(0xFF000000);
 const _white = Color(0xFFFFFFFF);

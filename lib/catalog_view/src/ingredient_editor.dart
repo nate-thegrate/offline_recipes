@@ -1,10 +1,4 @@
-import 'package:material_ui/material_ui.dart';
-import 'package:signal_widgets/signal_widgets.dart';
-
-import 'catalog.dart';
-import 'catalog_edit.dart';
-import 'catalog_view.dart';
-import 'measure.dart';
+part of '../catalog_view.dart';
 
 class IngredientListPage extends SignalStatefulWidget {
   const new({super.key});

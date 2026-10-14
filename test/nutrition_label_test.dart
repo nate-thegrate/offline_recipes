@@ -1,9 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:offline_recipes/catalog.dart';
+import 'package:offline_recipes/catalog/catalog.dart';
+import 'package:offline_recipes/catalog_view/catalog_view.dart';
 import 'package:offline_recipes/food.dart';
 import 'package:offline_recipes/measure.dart';
-import 'package:offline_recipes/nutrition_label.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

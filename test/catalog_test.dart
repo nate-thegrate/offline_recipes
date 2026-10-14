@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:offline_recipes/catalog.dart';
+import 'package:offline_recipes/catalog/catalog.dart';
 import 'package:offline_recipes/food.dart';
 import 'package:offline_recipes/measure.dart';
 

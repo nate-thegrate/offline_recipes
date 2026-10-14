@@ -1,10 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:offline_recipes/catalog.dart';
-import 'package:offline_recipes/catalog_edit.dart';
+import 'package:offline_recipes/catalog/catalog.dart';
 import 'package:offline_recipes/main.dart';
 import 'package:offline_recipes/measure.dart';
-import 'package:offline_recipes/settings.dart';
+import 'package:offline_recipes/settings/settings.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {

@@ -2,14 +2,14 @@ import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:signal_widgets/signal_widgets.dart';
 
-import 'catalog.dart';
-import 'catalog_edit.dart';
-import 'food.dart';
-import 'ingredient_editor.dart';
-import 'measure.dart';
-import 'nutrition_label.dart';
-import 'recipe_editor.dart';
-import 'settings.dart';
+import 'package:offline_recipes/catalog/catalog.dart';
+import 'package:offline_recipes/food.dart';
+import 'package:offline_recipes/measure.dart';
+import 'package:offline_recipes/settings/settings.dart';
+
+part 'src/ingredient_editor.dart';
+part 'src/recipe_editor.dart';
+part 'src/nutrition_label.dart';
 
 void _selectTag(String option) {
   if (HardwareKeyboard.instance.isShiftPressed) {
@@ -523,4 +523,23 @@ TextSpan _directionSpan(String source) {
     children.add(TextSpan(text: text.substring(index)));
   }
   return TextSpan(children: children);
+}
+
+Future<bool> confirmDelete(BuildContext context, String title, String message) async {
+  final answer = await showDialog<bool>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text(title),
+      content: Text(message),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+        TextButton(
+          key: const ValueKey('confirm-delete'),
+          onPressed: () => Navigator.pop(context, true),
+          child: const Text('Delete'),
+        ),
+      ],
+    ),
+  );
+  return answer ?? false;
 }

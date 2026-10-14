@@ -1,9 +1,4 @@
-import 'dart:convert';
-
-import 'package:material_ui/material_ui.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-
-import 'catalog.dart';
+part of '../catalog.dart';
 
 const _editsKey = 'catalogEdits';
 
@@ -167,31 +162,9 @@ Future<void> saveRecipe(Recipe recipe, {String? previousName}) async {
 Future<void> deleteRecipe(String name) async {
   final edits = await readCatalogEdits();
   final documents = {...edits.recipes}..remove(name);
-  final next = edits.copyWith(
-    recipes: documents,
-    deletedRecipes: {...edits.deletedRecipes, name},
-  );
+  final next = edits.copyWith(recipes: documents, deletedRecipes: {...edits.deletedRecipes, name});
   await writeCatalogEdits(next);
   applyCatalogEdits(next);
-}
-
-Future<bool> confirmDelete(BuildContext context, String title, String message) async {
-  final answer = await showDialog<bool>(
-    context: context,
-    builder: (context) => AlertDialog(
-      title: Text(title),
-      content: Text(message),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-        TextButton(
-          key: const ValueKey('confirm-delete'),
-          onPressed: () => Navigator.pop(context, true),
-          child: const Text('Delete'),
-        ),
-      ],
-    ),
-  );
-  return answer ?? false;
 }
 
 void _removeIngredient(Map<String, Map<String, Object?>> documents, String name) {
