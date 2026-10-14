@@ -1,0 +1,2 @@
+# Text is stored and checked out as LF. text=auto leaves binary files alone.
+* text=auto eol=lf
