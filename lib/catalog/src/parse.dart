@@ -15,20 +15,27 @@ List<Ingredient> _parseIngredients(Map<dynamic, dynamic> document) {
     if (value is! Map) {
       throw FormatException('Expected data for $key');
     }
-    final nutrition = _parseNutrition(_map(value, 'nutrition facts'));
-    final servingSize = _string(value, 'serving size');
-    final ingredient = Ingredient(
-      name: key,
-      servingSize: parseMeasure(servingSize),
-      servingSizeText: servingSize,
-      servings: _number(value, 'servings per container'),
-      totalPrice: Price(_number(value, 'container price')),
-      servingNutrition: nutrition.facts,
-      measurementText: nutrition.measurements,
-    );
-    pantry[key.toLowerCase()] = ingredient;
+    pantry[key.toLowerCase()] = _ingredientFromFields(key, value);
   }
   return pantry.values.toList();
+}
+
+Ingredient parseIngredient(String name, Map<String, Object?> fields) {
+  return _ingredientFromFields(name, fields as Map<dynamic, dynamic>);
+}
+
+Ingredient _ingredientFromFields(String name, Map<dynamic, dynamic> fields) {
+  final nutrition = _parseNutrition(_map(fields, 'nutrition facts'));
+  final servingSize = _string(fields, 'serving size');
+  return Ingredient(
+    name: name,
+    servingSize: parseMeasure(servingSize),
+    servingSizeText: servingSize,
+    servings: _number(fields, 'servings per container'),
+    totalPrice: Price(_number(fields, 'container price')),
+    servingNutrition: nutrition.facts,
+    measurementText: nutrition.measurements,
+  );
 }
 
 Map<String, Measure> _parseDailyValues(Map<dynamic, dynamic> document) {
@@ -58,21 +65,27 @@ List<Recipe> _parseRecipes(Map<dynamic, dynamic> document, List<Ingredient> pant
     if (value is! Map) {
       throw FormatException('Expected data for $key');
     }
-    final rawServings = value['servings'] as Object?;
-    final servingsSpecified = rawServings != null;
-    recipes.add(
-      Recipe(
-        name: key,
-        tags: _tags(_string(value, 'tags')),
-        servings: servingsSpecified ? _asDouble(rawServings, '$key servings') : 1,
-        servingsSpecified: servingsSpecified,
-        calculatesNutrition: _calculates(value),
-        lines: _lines(value['ingredients'] as Object?, pantry, key),
-        directions: _texts(value['directions'] as Object?, '$key directions'),
-      ),
-    );
+    recipes.add(_recipeFromFields(key, value, pantry));
   }
   return recipes;
+}
+
+Recipe parseRecipe(String name, Map<String, Object?> fields, List<Ingredient> pantry) {
+  return _recipeFromFields(name, fields as Map<dynamic, dynamic>, pantry);
+}
+
+Recipe _recipeFromFields(String name, Map<dynamic, dynamic> fields, List<Ingredient> pantry) {
+  final rawServings = fields['servings'] as Object?;
+  final servingsSpecified = rawServings != null;
+  return Recipe(
+    name: name,
+    tags: _tags(_string(fields, 'tags')),
+    servings: servingsSpecified ? _asDouble(rawServings, '$name servings') : 1,
+    servingsSpecified: servingsSpecified,
+    calculatesNutrition: _calculates(fields),
+    lines: _lines(fields['ingredients'] as Object?, pantry, name),
+    directions: _texts(fields['directions'] as Object?, '$name directions'),
+  );
 }
 
 bool _calculates(Map<dynamic, dynamic> recipe) {
@@ -154,6 +167,33 @@ String _canonicalName(String name) {
 RecipeLine recipeLineFor(String text, List<Ingredient> pantry, {String? group}) =>
     _line(text, pantry, group: group);
 
+({NutritionFacts facts, Map<String, String> measurements}) _nutritionFromAmounts(
+  double calories,
+  Map<String, String> amounts,
+) {
+  final grams = <String, double>{};
+  final measurements = <String, String>{};
+  for (final MapEntry(:key, :value) in amounts.entries) {
+    _storeMass(key, value, _measurement(value, key), grams, measurements);
+  }
+  return (facts: NutritionFacts(calories: calories, grams: grams), measurements: measurements);
+}
+
+void _storeMass(
+  String key,
+  Object? value,
+  ({double value, String? unit}) measurement,
+  Map<String, double> grams,
+  Map<String, String> measurements,
+) {
+  final unit = measurement.unit;
+  if (unit == null) {
+    throw FormatException('Expected a unit for $key');
+  }
+  measurements[key] = _measurementString(value, key);
+  grams[key] = _toGrams(measurement.value, unit);
+}
+
 ({NutritionFacts facts, Map<String, String> measurements}) _parseNutrition(
   Map<dynamic, dynamic> document,
 ) {
@@ -178,12 +218,7 @@ RecipeLine recipeLineFor(String text, List<Ingredient> pantry, {String? group}) 
       calories = measurement.value;
       return;
     }
-    final unit = measurement.unit;
-    if (unit == null) {
-      throw FormatException('Expected a unit for $key');
-    }
-    measurements[key] = _measurementString(value, key);
-    grams[key] = _toGrams(measurement.value, unit);
+    _storeMass(key, value, measurement, grams, measurements);
   }
 
   for (final key in document.keys) {
