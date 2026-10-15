@@ -51,7 +51,7 @@ void main() {
   });
 
   testWidgets('settings leave the open recipe, search, and tag in place', (tester) async {
-    await _size(tester, const Size(1200, 800));
+    await _size(tester, const Size(CatalogPage.wideLayoutWidth, 800));
     await tester.pumpWidget(const App());
     await tester.pumpAndSettle();
 
@@ -169,7 +169,7 @@ void main() {
   });
 
   testWidgets('unit names rewrite a recipe line and keep its check', (tester) async {
-    await _size(tester, const Size(400, 800));
+    await _size(tester, const Size(CatalogPage.wideLayoutWidth - 1, 800));
     await tester.pumpWidget(const App());
     await tester.pumpAndSettle();
 
@@ -239,7 +239,7 @@ void main() {
   });
 
   testWidgets('text size scales the list and the nutrition label stays fixed', (tester) async {
-    await _size(tester, const Size(1100, 800));
+    await _size(tester, const Size(CatalogPage.wideLayoutWidth, 800));
     await tester.pumpWidget(const App());
     await tester.pumpAndSettle();
 

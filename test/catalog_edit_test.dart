@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:offline_recipes/catalog/catalog.dart';
+import 'package:offline_recipes/catalog_view/catalog_view.dart';
 import 'package:offline_recipes/main.dart';
 import 'package:offline_recipes/measure.dart';
 import 'package:offline_recipes/settings/settings.dart';
@@ -232,11 +233,13 @@ void main() {
   });
 
   testWidgets('a new recipe can be edited and deleted', (tester) async {
-    await tester.binding.setSurfaceSize(const Size(800, 1400));
+    await tester.binding.setSurfaceSize(const Size(CatalogPage.wideLayoutWidth - 1, 1400));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(const App());
     await tester.pumpAndSettle();
 
+    await tester.tap(find.byKey(const ValueKey('more-actions')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('new-recipe')));
     await tester.pumpAndSettle();
     await tester.enterText(find.byKey(const ValueKey('recipe-name')), 'saved toast');
@@ -314,7 +317,12 @@ void main() {
     final previousPrice = before.servingPrice.toString();
     final calories = before.totalNutrition.calories;
 
-    await tester.tap(find.byKey(const ValueKey('open-ingredients')));
+    final ingredientsButton = find.byKey(const ValueKey('open-ingredients'));
+    if (!tester.any(ingredientsButton.hitTestable())) {
+      await tester.tap(find.byKey(const ValueKey('more-actions')));
+      await tester.pumpAndSettle();
+    }
+    await tester.tap(ingredientsButton.hitTestable());
     await tester.pumpAndSettle();
     await tester.enterText(find.byKey(const ValueKey('ingredient-search')), 'whole wheat flour');
     await tester.pumpAndSettle();

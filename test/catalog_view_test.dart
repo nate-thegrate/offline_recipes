@@ -329,7 +329,7 @@ void main() {
   });
 
   testWidgets('selecting a recipe highlights that row', (tester) async {
-    await tester.binding.setSurfaceSize(const Size(1200, 800));
+    await tester.binding.setSurfaceSize(const Size(CatalogPage.wideLayoutWidth, 800));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(const App());
     await tester.pumpAndSettle();
@@ -376,7 +376,7 @@ void main() {
   });
 
   testWidgets('a wide window keeps the list beside the recipe', (tester) async {
-    await tester.binding.setSurfaceSize(const Size(1200, 800));
+    await tester.binding.setSurfaceSize(const Size(CatalogPage.wideLayoutWidth, 800));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(const App());
     await tester.pumpAndSettle();
@@ -403,8 +403,8 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('a phone-sized window opens the recipe on its own', (tester) async {
-    await tester.binding.setSurfaceSize(const Size(390, 844));
+  testWidgets('a narrow window opens the recipe on its own', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(CatalogPage.wideLayoutWidth - 1, 800));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(const App());
     await tester.pumpAndSettle();
@@ -440,21 +440,41 @@ void main() {
     }
   });
 
-  testWidgets('a narrow catalog bar lets the search field fill the row', (tester) async {
-    const width = 400.0;
-    await tester.binding.setSurfaceSize(const Size(width, 800));
+  testWidgets('a narrow catalog bar places the menu with the app bar actions', (tester) async {
+    const narrow = Size(CatalogPage.wideLayoutWidth - 1, 800);
+    await tester.binding.setSurfaceSize(narrow);
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(const App());
     await tester.pumpAndSettle();
 
     final search = find.byKey(const ValueKey('recipe-search'));
-    final searchSize = tester.getSize(search);
-    expect(searchSize.width, greaterThan(width - 48));
-    expect(searchSize.height, lessThanOrEqualTo(64));
+    final menu = find.byKey(const ValueKey('more-actions'));
+    expect(find.descendant(of: search, matching: menu), findsNothing);
     expect(find.byKey(const ValueKey('new-recipe')), findsNothing);
     expect(find.byKey(const ValueKey('open-ingredients')), findsNothing);
     expect(find.byKey(const ValueKey('open-settings')), findsNothing);
 
+    final searchRect = tester.getRect(search);
+    final menuRect = tester.getRect(menu);
+    final bar = tester.getRect(find.byType(AppBar));
+    expect(menuRect.left, greaterThanOrEqualTo(searchRect.right));
+    expect(menuRect.right, lessThanOrEqualTo(bar.right));
+    expect(searchRect.height, lessThanOrEqualTo(bar.height));
+    expect(menuRect.height, lessThanOrEqualTo(bar.height));
+    expect(menuRect.center.dy, closeTo(searchRect.center.dy, 0.5));
+
+    const wide = Size(CatalogPage.wideLayoutWidth, 800);
+    await tester.binding.setSurfaceSize(wide);
+    await tester.pumpAndSettle();
+    final action = tester.getRect(find.byKey(const ValueKey('open-settings')));
+    final wideBar = tester.getRect(find.byType(AppBar));
+    expect(find.byKey(const ValueKey('more-actions')), findsNothing);
+    expect(menuRect.size, action.size);
+    expect(bar.right - menuRect.right, closeTo(wideBar.right - action.right, 0.1));
+    expect(menuRect.center.dy, closeTo(action.center.dy, 0.1));
+
+    await tester.binding.setSurfaceSize(narrow);
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('more-actions')));
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('new-recipe')), findsOneWidget);
