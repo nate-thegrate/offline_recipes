@@ -354,7 +354,12 @@ Future<void> _size(WidgetTester tester, Size size) async {
 }
 
 Future<void> _openSettings(WidgetTester tester) async {
-  await tester.tap(find.byTooltip('Settings').hitTestable());
+  final settings = find.byKey(const ValueKey('open-settings'));
+  if (!tester.any(settings.hitTestable())) {
+    await tester.tap(find.byKey(const ValueKey('more-actions')));
+    await tester.pumpAndSettle();
+  }
+  await tester.tap(settings.hitTestable());
   await tester.pumpAndSettle();
 }
 

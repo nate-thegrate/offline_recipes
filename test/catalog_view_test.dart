@@ -411,13 +411,35 @@ void main() {
 
     final recipe = recipes.first;
     await _openRecipe(tester, recipe);
+    expect(find.text(recipe.name.titleCase), findsOneWidget);
     await tester.scrollUntilVisible(find.text('Directions'), 400, scrollable: _detailScroll);
     await tester.pumpAndSettle();
-
-    expect(find.text(recipe.name.titleCase), findsOneWidget);
     expect(find.text('Directions'), findsWidgets);
     expect(find.byKey(const ValueKey('recipe-list')), findsNothing);
     expect(find.byTooltip('Back'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('a narrow catalog bar lets the search field fill the row', (tester) async {
+    const width = 400.0;
+    await tester.binding.setSurfaceSize(const Size(width, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(const App());
+    await tester.pumpAndSettle();
+
+    final search = find.byKey(const ValueKey('recipe-search'));
+    final searchSize = tester.getSize(search);
+    expect(searchSize.width, greaterThan(width - 48));
+    expect(searchSize.height, lessThanOrEqualTo(64));
+    expect(find.byKey(const ValueKey('new-recipe')), findsNothing);
+    expect(find.byKey(const ValueKey('open-ingredients')), findsNothing);
+    expect(find.byKey(const ValueKey('open-settings')), findsNothing);
+
+    await tester.tap(find.byKey(const ValueKey('more-actions')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('new-recipe')), findsOneWidget);
+    expect(find.byKey(const ValueKey('open-ingredients')), findsOneWidget);
+    expect(find.byKey(const ValueKey('open-settings')), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

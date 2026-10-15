@@ -37,7 +37,12 @@ void main() {
       ColorScheme.fromSeed(seedColor: colorForHue(200), brightness: .dark).primary,
     );
 
-    await tester.tap(find.byTooltip('Settings').hitTestable());
+    final settings = find.byKey(const ValueKey('open-settings'));
+    if (!tester.any(settings.hitTestable())) {
+      await tester.tap(find.byKey(const ValueKey('more-actions')));
+      await tester.pumpAndSettle();
+    }
+    await tester.tap(settings.hitTestable());
     await tester.pumpAndSettle();
     expect(tester.widget<Slider>(find.byKey(const ValueKey('color-hue'))).value, 200);
     expect(
@@ -59,10 +64,7 @@ void main() {
     await tester.scrollUntilVisible(
       find.byKey(const ValueKey('show-nutrition')),
       200,
-      scrollable: find.descendant(
-        of: find.byType(SettingsPage),
-        matching: find.byType(Scrollable),
-      ),
+      scrollable: find.descendant(of: find.byType(SettingsPage), matching: find.byType(Scrollable)),
     );
     expect(
       tester.widget<SwitchListTile>(find.byKey(const ValueKey('show-nutrition'))).value,

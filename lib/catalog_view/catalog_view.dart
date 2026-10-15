@@ -32,19 +32,14 @@ class CatalogPage extends StatelessWidget {
   const new({super.key});
 
   static void _navigateRecipe(Recipe recipe) {
-    final route = MaterialPageRoute<void>(
-      builder: (context) => Scaffold(
-        appBar: AppBar(
-          title: Text(recipe.name.titleCase),
-          actions: [
-            _RecipeActions(recipe: recipe, popWhenDeleted: true),
-            const SettingsButton(),
-          ],
+    navigator.push(
+      MaterialPageRoute<void>(
+        builder: (context) => Scaffold(
+          appBar: AppBar(actions: const [SettingsButton()]),
+          body: RecipeDetail(recipe: recipe, showTitle: true, popWhenDeleted: true),
         ),
-        body: RecipeDetail(recipe: recipe, showTitle: false),
       ),
     );
-    navigator.push(route);
   }
 
   static void _newRecipe() {
@@ -57,34 +52,37 @@ class CatalogPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        toolbarHeight: 64,
-        titleTextStyle: TextTheme.of(context).bodyLarge,
-        excludeHeaderSemantics: true,
-        notificationPredicate: (_) => false,
-        title: const RecipeSearchField(),
-        actions: const [
-          IconButton(
-            key: ValueKey('new-recipe'),
-            tooltip: 'New recipe',
-            onPressed: _newRecipe,
-            icon: Icon(Icons.add),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final showMenu = constraints.maxWidth < 600;
+        return Scaffold(
+          appBar: AppBar(
+            toolbarHeight: 64,
+            titleTextStyle: TextTheme.of(context).bodyLarge,
+            excludeHeaderSemantics: true,
+            notificationPredicate: (_) => false,
+            title: RecipeSearchField(showMenu: showMenu),
+            actions: showMenu
+                ? null
+                : const [
+                    IconButton(
+                      key: ValueKey('new-recipe'),
+                      tooltip: 'New recipe',
+                      onPressed: _newRecipe,
+                      icon: Icon(Icons.add),
+                    ),
+                    IconButton(
+                      key: ValueKey('open-ingredients'),
+                      tooltip: 'Ingredients',
+                      onPressed: _openIngredients,
+                      icon: Icon(Icons.kitchen_outlined),
+                    ),
+                    SettingsButton(),
+                  ],
+            titleSpacing: 8,
+            actionsPadding: .only(right: 8),
           ),
-          IconButton(
-            key: ValueKey('open-ingredients'),
-            tooltip: 'Ingredients',
-            onPressed: _openIngredients,
-            icon: Icon(Icons.kitchen_outlined),
-          ),
-          SettingsButton(),
-        ],
-        titleSpacing: 8,
-        actionsPadding: .only(right: 8),
-      ),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          return constraints.maxWidth >= 840
+          body: constraints.maxWidth >= 840
               ? const Row(
                   children: [
                     SizedBox(width: 380, child: RecipeBrowser()),
@@ -92,9 +90,9 @@ class CatalogPage extends StatelessWidget {
                     Expanded(child: SelectedRecipe()),
                   ],
                 )
-              : const RecipeBrowser(onSelect: _navigateRecipe);
-        },
-      ),
+              : const RecipeBrowser(onSelect: _navigateRecipe),
+        );
+      },
     );
   }
 }
@@ -198,7 +196,9 @@ class SettingsButton extends StatelessWidget {
 }
 
 class RecipeSearchField extends StatelessWidget {
-  const new({super.key});
+  const new({this.showMenu = false, super.key});
+
+  final bool showMenu;
 
   @override
   Widget build(BuildContext context) {
@@ -209,10 +209,55 @@ class RecipeSearchField extends StatelessWidget {
       decoration: InputDecoration(
         hintText: 'Search recipes',
         prefixIcon: const Icon(Icons.search),
+        suffixIcon: showMenu ? const _CatalogMenu() : null,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(28)),
         isDense: true,
       ),
     );
+  }
+}
+
+class _CatalogMenu extends StatelessWidget {
+  const new();
+
+  static List<PopupMenuEntry<void>> _items(BuildContext _) => const [
+    PopupMenuItem(
+      key: ValueKey('new-recipe'),
+      onTap: CatalogPage._newRecipe,
+      child: _CatalogMenuLabel(Icons.add, 'New recipe'),
+    ),
+    PopupMenuItem(
+      key: ValueKey('open-ingredients'),
+      onTap: CatalogPage._openIngredients,
+      child: _CatalogMenuLabel(Icons.kitchen_outlined, 'Ingredients'),
+    ),
+    PopupMenuItem(
+      key: ValueKey('open-settings'),
+      onTap: SettingsButton._open,
+      child: _CatalogMenuLabel(Icons.settings_outlined, 'Settings'),
+    ),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return PopupMenuButton<void>(
+      key: const ValueKey('more-actions'),
+      tooltip: 'Show menu',
+      icon: const Icon(Icons.more_vert),
+      itemBuilder: _items,
+    );
+  }
+}
+
+class _CatalogMenuLabel extends StatelessWidget {
+  const new(this.icon, this.label);
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(children: [Icon(icon), const SizedBox(width: 12), Text(label)]);
   }
 }
 
@@ -313,10 +358,16 @@ class _RecipeActions extends SignalWidget {
 }
 
 class RecipeDetail extends SignalWidget {
-  const new({required this.recipe, required this.showTitle, super.key});
+  const new({
+    required this.recipe,
+    required this.showTitle,
+    this.popWhenDeleted = false,
+    super.key,
+  });
 
   final Recipe recipe;
   final bool showTitle;
+  final bool popWhenDeleted;
 
   @override
   Widget build(BuildContext context) {
@@ -330,7 +381,7 @@ class RecipeDetail extends SignalWidget {
           crossAxisAlignment: .start,
           children: [
             Expanded(child: Text(recipe.name.titleCase, style: textTheme.headlineMedium)),
-            _RecipeActions(recipe: recipe, popWhenDeleted: false),
+            _RecipeActions(recipe: recipe, popWhenDeleted: popWhenDeleted),
           ],
         ),
         const SizedBox(height: 8),
@@ -392,10 +443,7 @@ class _RecipeNutrition extends SignalWidget {
   @override
   Widget build(BuildContext context) {
     if (!showNutrition.value) return const SizedBox.shrink();
-    return Padding(
-      padding: const .only(top: 16),
-      child: NutritionLabel(recipe),
-    );
+    return Padding(padding: const .only(top: 16), child: NutritionLabel(recipe));
   }
 }
 
