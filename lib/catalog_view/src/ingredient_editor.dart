@@ -55,7 +55,7 @@ class _IngredientListPageState extends State<IngredientListPage> {
                       final ingredient = matching[index];
                       return ListTile(
                         key: ValueKey('ingredient-${ingredient.name}'),
-                        title: Text(titleCase(ingredient.name)),
+                        title: Text(ingredient.name.titleCase),
                         subtitle: Text('${ingredient.servingSizeText} · ${ingredient.totalPrice}'),
                         onTap: () => _open(ingredient),
                       );
@@ -118,7 +118,7 @@ class _IngredientEditorState extends State<IngredientEditor> {
   Future<void> _save() async {
     final Ingredient ingredient;
     try {
-      ingredient = ingredientFromEditor(
+      ingredient = Ingredient.fromEditor(
         name: _name.text,
         servingSize: _servingSize.text,
         servings: _servings.text,
@@ -145,7 +145,7 @@ class _IngredientEditorState extends State<IngredientEditor> {
     if (ingredient == null) return;
     final confirmed = await confirmDelete(
       context,
-      'Delete ${titleCase(ingredient.name)}?',
+      'Delete ${ingredient.name.titleCase}?',
       'Recipes that use it lose its price and nutrition.',
     );
     if (!confirmed || !mounted) return;

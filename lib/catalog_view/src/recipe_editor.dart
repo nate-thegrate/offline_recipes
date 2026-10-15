@@ -56,7 +56,7 @@ class _RecipeEditorState extends State<RecipeEditor> {
     final previous = widget.recipe?.name;
     final Recipe recipe;
     try {
-      recipe = recipeFromEditor(
+      recipe = Recipe.fromEditor(
         name: _name.text,
         tags: _tags.text,
         servings: _servings.text,

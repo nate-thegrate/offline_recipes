@@ -21,8 +21,8 @@ void main() {
   });
 
   test('editor text keeps groups, optional lines, and direction breaks', () {
-    final rolls = findRecipe('cinnamon rolls')!;
-    final edited = recipeFromEditor(
+    final rolls = recipes.findByName('cinnamon rolls')!;
+    final edited = Recipe.fromEditor(
       name: rolls.name,
       tags: rolls.tags.join(', '),
       servings: rolls.specifiedServings ?? '',
@@ -66,7 +66,7 @@ void main() {
 
   test('a serving size has to be a measure', () {
     expect(
-      () => ingredientFromEditor(
+      () => Ingredient.fromEditor(
         name: 'oat milk',
         servingSize: 'a splash',
         servings: '1',
@@ -83,7 +83,7 @@ void main() {
     await saveIngredient(_oatMilk(price: '3.00'));
     await saveRecipe(_latte());
 
-    final recipe = findRecipe('oat latte')!;
+    final recipe = recipes.findByName('oat latte')!;
     expect(recipe.isPriced, isTrue);
     expect(recipe.totalPrice.dollars, closeTo(1.5, 1e-9));
     expect(recipe.totalNutrition.calories, closeTo(240, 1e-9));
@@ -95,24 +95,24 @@ void main() {
     selected.value = null;
     await reloadCatalogEdits();
 
-    final again = findRecipe('oat latte')!;
+    final again = recipes.findByName('oat latte')!;
     expect(again.totalPrice.dollars, closeTo(1.5, 1e-9));
     expect(again.totalNutrition.calories, closeTo(240, 1e-9));
-    expect(findIngredient('test oat milk')!.totalPrice.dollars, closeTo(3, 1e-9));
+    expect(ingredients.findByName('test oat milk')!.totalPrice.dollars, closeTo(3, 1e-9));
     expect(recipes.length, before + 1);
   });
 
   test('updating an ingredient price changes the recipe and keeps its nutrition', () async {
     await saveIngredient(_oatMilk(price: '3.00'));
     await saveRecipe(_latte());
-    final calories = findRecipe('oat latte')!.totalNutrition.calories;
+    final calories = recipes.findByName('oat latte')!.totalNutrition.calories;
 
     await saveIngredient(_oatMilk(price: '6.00'), previousName: 'test oat milk');
 
-    final recipe = findRecipe('oat latte')!;
+    final recipe = recipes.findByName('oat latte')!;
     expect(recipe.totalPrice.dollars, closeTo(3, 1e-9));
     expect(recipe.totalNutrition.calories, closeTo(calories, 1e-9));
-    expect(findIngredient('test oat milk')!.servingPrice.dollars, closeTo(1.5, 1e-9));
+    expect(ingredients.findByName('test oat milk')!.servingPrice.dollars, closeTo(1.5, 1e-9));
   });
 
   test('deleting an ingredient drops it out of recipes that use it', () async {
@@ -121,20 +121,20 @@ void main() {
 
     await deleteIngredient('test oat milk');
 
-    final recipe = findRecipe('oat latte')!;
+    final recipe = recipes.findByName('oat latte')!;
     expect(recipe.lines.single.food, isNull);
     expect(recipe.isPriced, isFalse);
     expect(recipe.totalPrice.dollars, 0);
-    expect(findIngredient('test oat milk'), isNull);
+    expect(ingredients.findByName('test oat milk'), isNull);
 
     await reloadCatalogEdits();
-    expect(findIngredient('test oat milk'), isNull);
-    expect(findRecipe('oat latte')!.lines.single.food, isNull);
+    expect(ingredients.findByName('test oat milk'), isNull);
+    expect(recipes.findByName('oat latte')!.lines.single.food, isNull);
   });
 
   test('updating a built-in ingredient reprices the recipes that use it', () async {
-    final flour = findIngredient('whole wheat flour')!;
-    final cornbread = findRecipe('cornbread')!;
+    final flour = ingredients.findByName('whole wheat flour')!;
+    final cornbread = recipes.findByName('cornbread')!;
     expect(cornbread.isPriced, isTrue);
     final line = cornbread.lines.firstWhere((item) => item.food?.name == flour.name);
     final oldTotal = cornbread.totalPrice.dollars;
@@ -143,7 +143,7 @@ void main() {
     final protein = flour.servingNutrition.grams['Protein'];
 
     await saveIngredient(
-      ingredientFromEditor(
+      Ingredient.fromEditor(
         name: flour.name,
         servingSize: flour.servingSizeText,
         servings: flour.servings.plainNumber,
@@ -157,7 +157,7 @@ void main() {
       previousName: flour.name,
     );
 
-    final updated = findRecipe('cornbread')!;
+    final updated = recipes.findByName('cornbread')!;
     expect(updated.totalPrice.dollars, closeTo(oldTotal - oldLine, 1e-6));
     expect(updated.totalNutrition.calories, closeTo(oldCalories, 1e-6));
     expect(
@@ -170,8 +170,8 @@ void main() {
     );
 
     await reloadCatalogEdits();
-    expect(findRecipe('cornbread')!.totalPrice.dollars, closeTo(oldTotal - oldLine, 1e-6));
-    expect(findIngredient('whole wheat flour')!.totalPrice.dollars, 0);
+    expect(recipes.findByName('cornbread')!.totalPrice.dollars, closeTo(oldTotal - oldLine, 1e-6));
+    expect(ingredients.findByName('whole wheat flour')!.totalPrice.dollars, 0);
   });
 
   test('a deleted built-in recipe stays gone, and another recipe stays selected', () async {
@@ -181,18 +181,18 @@ void main() {
 
     await deleteRecipe(removed.name);
 
-    expect(findRecipe(removed.name), isNull);
+    expect(recipes.findByName(removed.name), isNull);
     expect(selected.value?.name, kept.name);
 
     await reloadCatalogEdits();
-    expect(findRecipe(removed.name), isNull);
-    expect(findRecipe(kept.name), isNotNull);
+    expect(recipes.findByName(removed.name), isNull);
+    expect(recipes.findByName(kept.name), isNotNull);
     expect(selected.value?.name, kept.name);
   });
 
   test('renaming a recipe leaves one copy under the new name', () async {
-    final original = findRecipe('popcorn')!;
-    final renamed = recipeFromEditor(
+    final original = recipes.findByName('popcorn')!;
+    final renamed = Recipe.fromEditor(
       name: 'chili popcorn',
       tags: original.tags.join(', '),
       servings: original.specifiedServings ?? '',
@@ -203,13 +203,13 @@ void main() {
 
     await saveRecipe(renamed, previousName: original.name);
 
-    expect(findRecipe(original.name), isNull);
-    expect(findRecipe('chili popcorn')!.directions, original.directions);
+    expect(recipes.findByName(original.name), isNull);
+    expect(recipes.findByName('chili popcorn')!.directions, original.directions);
     expect(selected.value?.name, 'chili popcorn');
 
     await reloadCatalogEdits();
-    expect(findRecipe('popcorn'), isNull);
-    expect(findRecipe('chili popcorn')!.lines.map((line) => line.text), [
+    expect(recipes.findByName('popcorn'), isNull);
+    expect(recipes.findByName('chili popcorn')!.lines.map((line) => line.text), [
       for (final line in original.lines) line.text,
     ]);
   });
@@ -217,7 +217,7 @@ void main() {
   test('a second recipe cannot take an existing name', () async {
     final name = recipes.first.name;
     final count = recipes.length;
-    final created = recipeFromEditor(
+    final created = Recipe.fromEditor(
       name: name,
       tags: 'side dish',
       servings: '',
@@ -228,7 +228,7 @@ void main() {
 
     await expectLater(saveRecipe(created), throwsFormatException);
     expect(recipes.length, count);
-    expect(findRecipe(name)!.directions, isNot(contains('Boil.')));
+    expect(recipes.findByName(name)!.directions, isNot(contains('Boil.')));
   });
 
   testWidgets('a new recipe can be edited and deleted', (tester) async {
@@ -250,7 +250,7 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('save-recipe')));
     await tester.pumpAndSettle();
 
-    final toast = findRecipe('saved toast')!;
+    final toast = recipes.findByName('saved toast')!;
     expect(toast.isPriced, isTrue);
     expect(toast.lines.single.food!.name, 'whole wheat flour');
     expect(toast.servings, 2);
@@ -289,14 +289,14 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Toast the bread.'), findsOneWidget);
     expect(find.text('Stir.'), findsNothing);
-    expect(findRecipe('saved toast')!.directions, ['Toast the bread.']);
+    expect(recipes.findByName('saved toast')!.directions, ['Toast the bread.']);
 
     await tester.tap(find.byKey(const ValueKey('delete-recipe')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('confirm-delete')));
     await tester.pumpAndSettle();
 
-    expect(findRecipe('saved toast'), isNull);
+    expect(recipes.findByName('saved toast'), isNull);
     expect(find.byKey(const ValueKey('recipe-saved toast')), findsNothing);
     expect(find.byKey(const ValueKey('recipe-list')), findsOneWidget);
   });
@@ -307,7 +307,7 @@ void main() {
     await tester.pumpWidget(const App());
     await tester.pumpAndSettle();
 
-    final before = findRecipe('cornbread')!;
+    final before = recipes.findByName('cornbread')!;
     final previousPrice = before.servingPrice.toString();
     final calories = before.totalNutrition.calories;
 
@@ -323,10 +323,10 @@ void main() {
     await tester.pageBack();
     await tester.pumpAndSettle();
 
-    final updated = findRecipe('cornbread')!;
+    final updated = recipes.findByName('cornbread')!;
     expect(updated.servingPrice.toString(), isNot(previousPrice));
     expect(updated.totalNutrition.calories, closeTo(calories, 1e-6));
-    expect(findIngredient('whole wheat flour')!.totalPrice.dollars, 0);
+    expect(ingredients.findByName('whole wheat flour')!.totalPrice.dollars, 0);
 
     await tester.enterText(find.byKey(const ValueKey('recipe-search')), 'cornbread');
     await tester.pumpAndSettle();
@@ -341,7 +341,7 @@ void main() {
 }
 
 Ingredient _oatMilk({required String price}) {
-  return ingredientFromEditor(
+  return Ingredient.fromEditor(
     name: 'test oat milk',
     servingSize: '1 cup',
     servings: '4',
@@ -352,7 +352,7 @@ Ingredient _oatMilk({required String price}) {
 }
 
 Recipe _latte() {
-  return recipeFromEditor(
+  return Recipe.fromEditor(
     name: 'oat latte',
     tags: 'drink',
     servings: '2',

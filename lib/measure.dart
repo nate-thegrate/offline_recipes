@@ -1,6 +1,21 @@
 import 'food.dart';
 
-enum UnitNames { full, short, superShort }
+enum UnitNames {
+  full,
+  short,
+  superShort;
+
+  /// Rewrites a leading measure in [source]. Amounts such as "1 1/2" stay as written.
+  String display(String source) {
+    final text = source.trim();
+    final parsed = ParsedAmount.tryParse(text);
+    if (parsed == null) return source;
+    final spelling = parsed.measure.unit.name.spelling(parsed.measure.amount, this);
+    final prefix = text.substring(0, parsed.amountEnd);
+    final tail = text.substring(parsed.unitEnd);
+    return '$prefix $spelling$tail';
+  }
+}
 
 String labelAmount(double amount) => switch (amount) {
   > 0 && < 10 => amount.toStringAsFixed(1),
@@ -12,30 +27,6 @@ extension PlainNumber on double {
     if (this == roundToDouble()) return toStringAsFixed(0);
     return toString();
   }
-}
-
-String formatMeasure(Measure measure) {
-  return '${measure.amount.plainNumber} ${measure.unit.name.short}';
-}
-
-String _unitSpelling(UnitName name, double amount, UnitNames names) {
-  final plural = amount > 1;
-  return switch (names) {
-    .full => plural ? name.fullPlural : name.full,
-    .short => plural ? name.plural : name.short,
-    .superShort => name.superShort,
-  };
-}
-
-/// Rewrites a leading measure in [source]. Amounts such as "1 1/2" stay as written.
-String displayIngredient(String source, UnitNames names) {
-  final text = source.trim();
-  final parsed = tryParseAmount(text);
-  if (parsed == null) return source;
-  final spelling = _unitSpelling(parsed.measure.unit.name, parsed.measure.amount, names);
-  final prefix = text.substring(0, parsed.amountEnd);
-  final tail = text.substring(parsed.unitEnd);
-  return '$prefix $spelling$tail';
 }
 
 class Measure {
@@ -56,6 +47,15 @@ class Measure {
       throw FormatException('Expected a unit in "$text"');
     }
     return Measure(amount.value, Unit.fromName(words[index]));
+  }
+
+  /// Parses [text] as one measure, including a multi-word unit such as "1 fl. oz".
+  factory parseExact(String text) {
+    final parsed = ParsedAmount.tryParse(text);
+    if (parsed == null || parsed.name.isNotEmpty) {
+      throw FormatException('Not a measure: $text');
+    }
+    return parsed.measure;
   }
 
   final double amount;
@@ -79,6 +79,8 @@ class Measure {
 
   String percentOf(Measure daily) => '${((this / daily) * 100).round()}%';
 
+  String get plainText => '${amount.plainNumber} ${unit.name.short}';
+
   String get quantityText => '${labelAmount(amount)}${unit.name.short}';
 }
 
@@ -95,46 +97,38 @@ class ParsedAmount {
 
   /// Exclusive end of the leading unit spelling in the trimmed source.
   final int unitEnd;
-}
 
-Measure parseMeasure(String text) {
-  final parsed = tryParseAmount(text);
-  if (parsed == null || parsed.name.isNotEmpty) {
-    throw FormatException('Not a measure: $text');
-  }
-  return parsed.measure;
-}
-
-ParsedAmount? tryParseAmount(String text) {
-  final trimmed = text.trim();
-  final match = _amount.firstMatch(trimmed);
-  if (match == null) return null;
-  final whole = match.namedGroup('whole');
-  final double amount;
-  if (whole != null) {
-    final denominator = int.parse(match.namedGroup('mixedDenominator')!);
-    if (denominator == 0) return null;
-    amount = int.parse(whole) + int.parse(match.namedGroup('mixedNumerator')!) / denominator;
-  } else {
-    final numerator = match.namedGroup('numerator');
-    if (numerator != null) {
-      final denominator = int.parse(match.namedGroup('denominator')!);
+  static ParsedAmount? tryParse(String text) {
+    final trimmed = text.trim();
+    final match = _amount.firstMatch(trimmed);
+    if (match == null) return null;
+    final whole = match.namedGroup('whole');
+    final double amount;
+    if (whole != null) {
+      final denominator = int.parse(match.namedGroup('mixedDenominator')!);
       if (denominator == 0) return null;
-      amount = int.parse(numerator) / denominator;
+      amount = int.parse(whole) + int.parse(match.namedGroup('mixedNumerator')!) / denominator;
     } else {
-      amount = double.parse(match.namedGroup('decimal')!);
+      final numerator = match.namedGroup('numerator');
+      if (numerator != null) {
+        final denominator = int.parse(match.namedGroup('denominator')!);
+        if (denominator == 0) return null;
+        amount = int.parse(numerator) / denominator;
+      } else {
+        amount = double.parse(match.namedGroup('decimal')!);
+      }
     }
+    final rawRest = match.namedGroup('rest')!;
+    final leading = Unit.matchLeading(rawRest);
+    if (leading == null) return null;
+    final restStart = match.end - rawRest.length;
+    return ParsedAmount(
+      Measure(amount, leading.unit),
+      leading.rest.trim(),
+      amountEnd: trimmed.substring(0, restStart).trimRight().length,
+      unitEnd: restStart + rawRest.length - leading.rest.length,
+    );
   }
-  final rawRest = match.namedGroup('rest')!;
-  final leading = Unit.matchLeading(rawRest);
-  if (leading == null) return null;
-  final restStart = match.end - rawRest.length;
-  return ParsedAmount(
-    Measure(amount, leading.unit),
-    leading.rest.trim(),
-    amountEnd: trimmed.substring(0, restStart).trimRight().length,
-    unitEnd: restStart + rawRest.length - leading.rest.length,
-  );
 }
 
 final _amount = RegExp(

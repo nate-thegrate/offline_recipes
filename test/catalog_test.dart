@@ -30,7 +30,7 @@ void main() {
 
   test('a mixed number scales from the serving size', () {
     final ingredient = _ingredient(servingSize: const Measure(1, Unit.tbsp));
-    final measure = parseMeasure('1 1/2 tablespoon');
+    final measure = Measure.parseExact('1 1/2 tablespoon');
     final expected = measure.milliliters / ingredient.servingSize.milliliters;
     final used = ingredient.used(measure)!;
 
@@ -51,7 +51,7 @@ void main() {
     expect(ingredientAliases, isNotEmpty);
     for (final MapEntry(:key, :value) in ingredientAliases.entries) {
       final ingredient = _ingredient(name: value);
-      final line = recipeLineFor('1 cup $key', [ingredient]);
+      final line = RecipeLine.parse('1 cup $key', [ingredient]);
 
       expect(line.food, isNotNull, reason: key);
       expect(line.food!.name, value, reason: key);
@@ -61,23 +61,23 @@ void main() {
 
     expect(ignoredIngredientNames, isNotEmpty);
     for (final name in ignoredIngredientNames) {
-      expect(recipeLineFor(name, const []).ignored, isTrue, reason: name);
-      expect(recipeLineFor('2 cups $name', const []).ignored, isTrue, reason: name);
+      expect(RecipeLine.parse(name, const []).ignored, isTrue, reason: name);
+      expect(RecipeLine.parse('2 cups $name', const []).ignored, isTrue, reason: name);
     }
 
     final ingredient = _ingredient();
     final pantry = [ingredient];
-    final plain = recipeLineFor('1 cup ${ingredient.name}', pantry, group: 'icing');
+    final plain = RecipeLine.parse('1 cup ${ingredient.name}', pantry, group: 'icing');
     expect(plain.group, 'icing');
     expect(plain.optional, isFalse);
     expect(plain.ignored, isFalse);
     expect(plain.food!.servings, 1);
 
-    final optional = recipeLineFor('1 cup ${ingredient.name} (optional)', pantry);
+    final optional = RecipeLine.parse('1 cup ${ingredient.name} (optional)', pantry);
     expect(optional.optional, isTrue);
     expect(optional.food!.servings, 1);
 
-    expect(recipeLineFor('salt to taste', pantry).food, isNull);
+    expect(RecipeLine.parse('salt to taste', pantry).food, isNull);
   });
 
   test('a priced recipe is the sum of its required foods', () {
@@ -120,9 +120,9 @@ void main() {
         }
         final food = line.food;
         if (food == null) continue;
-        final parsed = tryParseAmount(line.text);
+        final parsed = ParsedAmount.tryParse(line.text);
         expect(parsed, isNotNull, reason: reason);
-        final again = findIngredient(food.name)!.used(parsed!.measure);
+        final again = ingredients.findByName(food.name)!.used(parsed!.measure);
         expect(again, isNotNull, reason: reason);
         expect(food.servings, again!.servings, reason: reason);
         expect(food.totalPrice.dollars, again.totalPrice.dollars, reason: reason);

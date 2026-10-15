@@ -15,27 +15,9 @@ List<Ingredient> _parseIngredients(Map<dynamic, dynamic> document) {
     if (value is! Map) {
       throw FormatException('Expected data for $key');
     }
-    pantry[key.toLowerCase()] = _ingredientFromFields(key, value);
+    pantry[key.toLowerCase()] = Ingredient.parse(key, Map<String, Object?>.from(value));
   }
   return pantry.values.toList();
-}
-
-Ingredient parseIngredient(String name, Map<String, Object?> fields) {
-  return _ingredientFromFields(name, fields as Map<dynamic, dynamic>);
-}
-
-Ingredient _ingredientFromFields(String name, Map<dynamic, dynamic> fields) {
-  final nutrition = _parseNutrition(_map(fields, 'nutrition facts'));
-  final servingSize = _string(fields, 'serving size');
-  return Ingredient(
-    name: name,
-    servingSize: parseMeasure(servingSize),
-    servingSizeText: servingSize,
-    servings: _number(fields, 'servings per container'),
-    totalPrice: Price(_number(fields, 'container price')),
-    servingNutrition: nutrition.facts,
-    measurementText: nutrition.measurements,
-  );
 }
 
 Map<String, Measure> _parseDailyValues(Map<dynamic, dynamic> document) {
@@ -65,27 +47,9 @@ List<Recipe> _parseRecipes(Map<dynamic, dynamic> document, List<Ingredient> pant
     if (value is! Map) {
       throw FormatException('Expected data for $key');
     }
-    recipes.add(_recipeFromFields(key, value, pantry));
+    recipes.add(Recipe.parse(key, Map<String, Object?>.from(value), pantry));
   }
   return recipes;
-}
-
-Recipe parseRecipe(String name, Map<String, Object?> fields, List<Ingredient> pantry) {
-  return _recipeFromFields(name, fields as Map<dynamic, dynamic>, pantry);
-}
-
-Recipe _recipeFromFields(String name, Map<dynamic, dynamic> fields, List<Ingredient> pantry) {
-  final rawServings = fields['servings'] as Object?;
-  final servingsSpecified = rawServings != null;
-  return Recipe(
-    name: name,
-    tags: _tags(_string(fields, 'tags')),
-    servings: servingsSpecified ? _asDouble(rawServings, '$name servings') : 1,
-    servingsSpecified: servingsSpecified,
-    calculatesNutrition: _calculates(fields),
-    lines: _lines(fields['ingredients'] as Object?, pantry, name),
-    directions: _texts(fields['directions'] as Object?, '$name directions'),
-  );
 }
 
 bool _calculates(Map<dynamic, dynamic> recipe) {
@@ -111,7 +75,7 @@ List<RecipeLine> _lines(Object? value, List<Ingredient> pantry, String recipe) {
   final lines = <RecipeLine>[];
   for (final item in value) {
     if (item is String) {
-      lines.add(_line(item, pantry));
+      lines.add(RecipeLine.parse(item, pantry));
       continue;
     }
     if (item is! Map || item.keys.length != 1) {
@@ -126,27 +90,10 @@ List<RecipeLine> _lines(Object? value, List<Ingredient> pantry, String recipe) {
       if (child is! String) {
         throw FormatException('Expected text in $recipe $group');
       }
-      lines.add(_line(child, pantry, group: group));
+      lines.add(RecipeLine.parse(child, pantry, group: group));
     }
   }
   return lines;
-}
-
-RecipeLine _line(String text, List<Ingredient> pantry, {String? group}) {
-  final parsed = tryParseAmount(text);
-  final name = parsed == null || parsed.name.isEmpty ? text : parsed.name;
-  final ignored = ignoredIngredientNames.contains(_normalized(name));
-  IngredientAmount? food;
-  if (parsed != null && parsed.name.isNotEmpty) {
-    food = _namedIngredient(pantry, _canonicalName(parsed.name))?.used(parsed.measure);
-  }
-  return RecipeLine(
-    text,
-    food: food,
-    group: group,
-    optional: text.toLowerCase().contains('(optional)'),
-    ignored: ignored,
-  );
 }
 
 String _normalized(String name) {
@@ -162,10 +109,6 @@ String _canonicalName(String name) {
   name = _normalized(name);
   return ingredientAliases[name] ?? name;
 }
-
-@visibleForTesting
-RecipeLine recipeLineFor(String text, List<Ingredient> pantry, {String? group}) =>
-    _line(text, pantry, group: group);
 
 ({NutritionFacts facts, Map<String, String> measurements}) _nutritionFromAmounts(
   double calories,

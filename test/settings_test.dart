@@ -22,24 +22,21 @@ void main() {
 
   test('ingredient units keep the written amount', () {
     expect(
-      displayIngredient('1 1/2 tablespoon baking powder', .full),
+      UnitNames.full.display('1 1/2 tablespoon baking powder'),
       '1 1/2 tablespoons baking powder',
     );
-    expect(displayIngredient('1 tablespoon oil', .full), '1 tablespoon oil');
-    expect(displayIngredient('1/2 cup oil', .full), '1/2 cup oil');
-    expect(displayIngredient('1/2 teaspoon salt', .short), '1/2 tsp salt');
-    expect(displayIngredient('2 cups vegetable broth', .short), '2 cups vegetable broth');
+    expect(UnitNames.full.display('1 tablespoon oil'), '1 tablespoon oil');
+    expect(UnitNames.full.display('1/2 cup oil'), '1/2 cup oil');
+    expect(UnitNames.short.display('1/2 teaspoon salt'), '1/2 tsp salt');
+    expect(UnitNames.short.display('2 cups vegetable broth'), '2 cups vegetable broth');
+    expect(UnitNames.superShort.display('1 1/2 tablespoon baking powder'), '1 1/2 T baking powder');
+    expect(UnitNames.superShort.display('1 teaspoon salt'), '1 t salt');
     expect(
-      displayIngredient('1 1/2 tablespoon baking powder', .superShort),
-      '1 1/2 T baking powder',
-    );
-    expect(displayIngredient('1 teaspoon salt', .superShort), '1 t salt');
-    expect(
-      displayIngredient('8 oz beans (most cans are about 16 oz)', .full),
+      UnitNames.full.display('8 oz beans (most cans are about 16 oz)'),
       '8 ounces beans (most cans are about 16 oz)',
     );
     expect(
-      displayIngredient('salt & black pepper to taste', .superShort),
+      UnitNames.superShort.display('salt & black pepper to taste'),
       'salt & black pepper to taste',
     );
   });
@@ -72,7 +69,7 @@ void main() {
 
     await _closeSettings(tester);
     expect(_tile(tester, recipe.name).selected, isTrue);
-    expect(find.text(displayIngredient(recipe.lines.first.text, .full)), findsWidgets);
+    expect(find.text(UnitNames.full.display(recipe.lines.first.text)), findsWidgets);
     expect(
       tester.widget<TextField>(find.byKey(const ValueKey('recipe-search'))).controller!.text,
       recipe.name,
@@ -182,13 +179,13 @@ void main() {
     );
     await _openRecipe(tester, recipe);
     await tester.scrollUntilVisible(
-      find.text(displayIngredient(original, .full)),
+      find.text(UnitNames.full.display(original)),
       300,
       scrollable: _detailScroll,
     );
     await tester.pumpAndSettle();
 
-    final full = displayIngredient(original, .full);
+    final full = UnitNames.full.display(original);
     await tester.tap(find.text(full));
     await tester.pumpAndSettle();
     expect(_checkbox(tester, full).value, isTrue);
@@ -197,7 +194,7 @@ void main() {
     await _choose(tester, 'unit-names', 'Tiny');
     await _closeSettings(tester);
 
-    final tiny = displayIngredient(original, .superShort);
+    final tiny = UnitNames.superShort.display(original);
     expect(find.text(tiny), findsOneWidget);
     expect(find.text(full), findsNothing);
     expect(_checkbox(tester, tiny).value, isTrue);
@@ -205,7 +202,7 @@ void main() {
     await _openSettings(tester);
     await _choose(tester, 'unit-names', 'Short');
     await _closeSettings(tester);
-    final abbreviated = displayIngredient(original, .short);
+    final abbreviated = UnitNames.short.display(original);
     expect(find.text(abbreviated), findsOneWidget);
     expect(_checkbox(tester, abbreviated).value, isTrue);
     expect(tester.takeException(), isNull);
@@ -249,7 +246,7 @@ void main() {
     final recipe = _pricedServings();
     await tester.enterText(find.byKey(const ValueKey('recipe-search')), recipe.name);
     await tester.pumpAndSettle();
-    final title = find.text(titleCase(recipe.name));
+    final title = find.text(recipe.name.titleCase);
     final before = tester.getSize(title).height;
 
     await tester.tap(find.byKey(ValueKey('recipe-${recipe.name}')));

@@ -1,3 +1,5 @@
+import 'measure.dart';
+
 abstract interface class Food {
   String get name;
   double get servings;
@@ -59,6 +61,15 @@ class UnitName {
   final String superShort;
   final String plural;
   final String fullPlural;
+
+  String spelling(double amount, UnitNames names) {
+    final pluralized = amount > 1;
+    return switch (names) {
+      .full => pluralized ? fullPlural : full,
+      .short => pluralized ? plural : short,
+      .superShort => superShort,
+    };
+  }
 
   @override
   String toString() => full;

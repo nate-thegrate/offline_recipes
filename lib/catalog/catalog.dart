@@ -54,21 +54,23 @@ List<Recipe> _matchingRecipes(String query) {
 /// Tags a recipe must have to show in the browser. Empty shows every recipe.
 final selectedTags = setSignal(<String>{});
 
-Ingredient? findIngredient(String name) => _namedIngredient(ingredients, name);
-
-Ingredient? _namedIngredient(Iterable<Ingredient> pantry, String name) {
-  final key = name.toLowerCase();
-  for (final ingredient in pantry) {
-    if (ingredient.name.toLowerCase() == key) return ingredient;
+extension IngredientNames on Iterable<Ingredient> {
+  Ingredient? findByName(String name) {
+    final key = name.toLowerCase();
+    for (final ingredient in this) {
+      if (ingredient.name.toLowerCase() == key) return ingredient;
+    }
+    return null;
   }
-  return null;
 }
 
-Recipe? findRecipe(String name) {
-  for (final recipe in recipes) {
-    if (recipe.name == name) return recipe;
+extension RecipeNames on Iterable<Recipe> {
+  Recipe? findByName(String name) {
+    for (final recipe in this) {
+      if (recipe.name == name) return recipe;
+    }
+    return null;
   }
-  return null;
 }
 
 /// Recipe open in the browser. Replaced when a catalog edit rebuilds that recipe.
@@ -113,7 +115,7 @@ void publishCatalog(List<Ingredient> pantry, List<Recipe> next, {String? focus})
   recipes.value = next;
   final target = focus ?? selected.peek()?.name;
   if (target == null) return;
-  selected.value = findRecipe(target);
+  selected.value = recipes.findByName(target);
 }
 
 @visibleForTesting

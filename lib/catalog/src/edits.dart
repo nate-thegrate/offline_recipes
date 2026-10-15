@@ -50,28 +50,28 @@ class CatalogEdits {
       deletedRecipes: deletedRecipes ?? this.deletedRecipes,
     );
   }
-}
 
-Future<CatalogEdits> readCatalogEdits() async {
-  final preferences = await SharedPreferences.getInstance();
-  final raw = preferences.getString(_editsKey);
-  if (raw == null || raw.isEmpty) return const CatalogEdits();
-  final decoded = jsonDecode(raw);
-  if (decoded is! Map) throw const FormatException('Catalog edits are not a map');
-  return CatalogEdits.fromJson(decoded);
-}
-
-Future<void> writeCatalogEdits(CatalogEdits edits) async {
-  final preferences = await SharedPreferences.getInstance();
-  if (edits.isEmpty) {
-    await preferences.remove(_editsKey);
-    return;
+  static Future<CatalogEdits> read() async {
+    final preferences = await SharedPreferences.getInstance();
+    final raw = preferences.getString(_editsKey);
+    if (raw == null || raw.isEmpty) return const CatalogEdits();
+    final decoded = jsonDecode(raw);
+    if (decoded is! Map) throw const FormatException('Catalog edits are not a map');
+    return CatalogEdits.fromJson(decoded);
   }
-  await preferences.setString(_editsKey, jsonEncode(edits.toJson()));
+
+  Future<void> write() async {
+    final preferences = await SharedPreferences.getInstance();
+    if (isEmpty) {
+      await preferences.remove(_editsKey);
+      return;
+    }
+    await preferences.setString(_editsKey, jsonEncode(toJson()));
+  }
 }
 
 Future<void> reloadCatalogEdits() async {
-  applyCatalogEdits(await readCatalogEdits());
+  applyCatalogEdits(await CatalogEdits.read());
 }
 
 void applyCatalogEdits(CatalogEdits edits, {String? focus}) {
@@ -81,7 +81,7 @@ void applyCatalogEdits(CatalogEdits edits, {String? focus}) {
   ];
   for (final MapEntry(:key, :value) in edits.ingredients.entries) {
     if (edits.deletedIngredients.contains(key.toLowerCase())) continue;
-    final ingredient = parseIngredient(key, value);
+    final ingredient = Ingredient.parse(key, value);
     final index = pantry.indexWhere(
       (item) => item.name.toLowerCase() == ingredient.name.toLowerCase(),
     );
@@ -94,11 +94,11 @@ void applyCatalogEdits(CatalogEdits edits, {String? focus}) {
 
   final next = <Recipe>[
     for (final recipe in bundledRecipes)
-      if (!edits.deletedRecipes.contains(recipe.name)) rebindRecipe(recipe, pantry),
+      if (!edits.deletedRecipes.contains(recipe.name)) recipe.rebind(pantry),
   ];
   for (final MapEntry(:key, :value) in edits.recipes.entries) {
     if (edits.deletedRecipes.contains(key)) continue;
-    final recipe = parseRecipe(key, value, pantry);
+    final recipe = Recipe.parse(key, value, pantry);
     final index = next.indexWhere((item) => item.name == recipe.name);
     if (index == -1) {
       next.add(recipe);
@@ -111,10 +111,10 @@ void applyCatalogEdits(CatalogEdits edits, {String? focus}) {
 
 Future<void> saveIngredient(Ingredient ingredient, {String? previousName}) async {
   final name = ingredient.name;
-  if (previousName?.toLowerCase() != name.toLowerCase() && findIngredient(name) != null) {
+  if (previousName?.toLowerCase() != name.toLowerCase() && ingredients.findByName(name) != null) {
     throw FormatException('An ingredient named $name already exists');
   }
-  final edits = await readCatalogEdits();
+  final edits = await CatalogEdits.read();
   final documents = {...edits.ingredients};
   final deleted = {...edits.deletedIngredients};
   if (previousName != null && previousName.toLowerCase() != name.toLowerCase()) {
@@ -123,29 +123,29 @@ Future<void> saveIngredient(Ingredient ingredient, {String? previousName}) async
   }
   _removeIngredient(documents, name);
   deleted.remove(name.toLowerCase());
-  documents[name] = ingredientDocument(ingredient);
+  documents[name] = ingredient.document;
   final next = edits.copyWith(ingredients: documents, deletedIngredients: deleted);
-  await writeCatalogEdits(next);
+  await next.write();
   applyCatalogEdits(next);
 }
 
 Future<void> deleteIngredient(String name) async {
-  final edits = await readCatalogEdits();
+  final edits = await CatalogEdits.read();
   final documents = {...edits.ingredients};
   _removeIngredient(documents, name);
   final next = edits.copyWith(
     ingredients: documents,
     deletedIngredients: {...edits.deletedIngredients, name.toLowerCase()},
   );
-  await writeCatalogEdits(next);
+  await next.write();
   applyCatalogEdits(next);
 }
 
 Future<void> saveRecipe(Recipe recipe, {String? previousName}) async {
-  if (previousName != recipe.name && findRecipe(recipe.name) != null) {
+  if (previousName != recipe.name && recipes.findByName(recipe.name) != null) {
     throw FormatException('A recipe named ${recipe.name} already exists');
   }
-  final edits = await readCatalogEdits();
+  final edits = await CatalogEdits.read();
   final documents = {...edits.recipes};
   final deleted = {...edits.deletedRecipes};
   if (previousName != null && previousName != recipe.name) {
@@ -153,17 +153,17 @@ Future<void> saveRecipe(Recipe recipe, {String? previousName}) async {
     deleted.add(previousName);
   }
   deleted.remove(recipe.name);
-  documents[recipe.name] = recipeDocument(recipe);
+  documents[recipe.name] = recipe.document;
   final next = edits.copyWith(recipes: documents, deletedRecipes: deleted);
-  await writeCatalogEdits(next);
+  await next.write();
   applyCatalogEdits(next, focus: recipe.name);
 }
 
 Future<void> deleteRecipe(String name) async {
-  final edits = await readCatalogEdits();
+  final edits = await CatalogEdits.read();
   final documents = {...edits.recipes}..remove(name);
   final next = edits.copyWith(recipes: documents, deletedRecipes: {...edits.deletedRecipes, name});
-  await writeCatalogEdits(next);
+  await next.write();
   applyCatalogEdits(next);
 }
 

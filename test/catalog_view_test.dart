@@ -398,7 +398,7 @@ void main() {
     expect(find.text(line.text), findsWidgets);
     final group = line.group;
     if (group != null) {
-      expect(find.text(titleCase(group)), findsWidgets);
+      expect(find.text(group.titleCase), findsWidgets);
     }
     expect(tester.takeException(), isNull);
   });
@@ -414,7 +414,7 @@ void main() {
     await tester.scrollUntilVisible(find.text('Directions'), 400, scrollable: _detailScroll);
     await tester.pumpAndSettle();
 
-    expect(find.text(titleCase(recipe.name)), findsOneWidget);
+    expect(find.text(recipe.name.titleCase), findsOneWidget);
     expect(find.text('Directions'), findsWidgets);
     expect(find.byKey(const ValueKey('recipe-list')), findsNothing);
     expect(find.byTooltip('Back'), findsOneWidget);

@@ -44,8 +44,8 @@ void main() {
     expect(Unit.fromName('\u00B5g'), Unit.mcg);
     expect(Unit.fromName('T'), Unit.tbsp);
     expect(Unit.fromName('t'), Unit.tsp);
-    expect(parseMeasure('16 oz').unit, Unit.oz);
-    expect(parseMeasure('1 fl. oz').unit, Unit.flOz);
+    expect(Measure.parseExact('16 oz').unit, Unit.oz);
+    expect(Measure.parseExact('1 fl. oz').unit, Unit.flOz);
   });
 
   test('cup fractions, milliliters, and liters are one volume', () {

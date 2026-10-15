@@ -9,8 +9,48 @@ class Ingredient implements Food {
     required this.servingNutrition,
     this.measurementText = const {},
     String? servingSizeText,
-  }) : servingSizeText = servingSizeText ?? formatMeasure(servingSize),
+  }) : servingSizeText = servingSizeText ?? servingSize.plainText,
        assert(servings > 0, 'A container needs at least one serving');
+
+  factory parse(String name, Map<String, Object?> fields) {
+    final data = fields as Map<dynamic, dynamic>;
+    final nutrition = _parseNutrition(_map(data, 'nutrition facts'));
+    final servingSize = _string(data, 'serving size');
+    return Ingredient(
+      name: name,
+      servingSize: Measure.parseExact(servingSize),
+      servingSizeText: servingSize,
+      servings: _number(data, 'servings per container'),
+      totalPrice: Price(_number(data, 'container price')),
+      servingNutrition: nutrition.facts,
+      measurementText: nutrition.measurements,
+    );
+  }
+
+  factory fromEditor({
+    required String name,
+    required String servingSize,
+    required String servings,
+    required String price,
+    required String calories,
+    required List<({String name, String amount})> nutrients,
+  }) {
+    final ingredientName = _requiredName(name);
+    final (:text, :measure) = _servingMeasure(servingSize);
+    final amounts = _nutrientAmounts(nutrients);
+    final servingCount = _positiveNumber(servings, 'Servings per container');
+    final containerPrice = _price(price);
+    final nutrition = _nutritionFromAmounts(_calories(calories), amounts);
+    return Ingredient(
+      name: ingredientName,
+      servingSize: measure,
+      servingSizeText: text,
+      servings: servingCount,
+      totalPrice: Price(containerPrice),
+      servingNutrition: nutrition.facts,
+      measurementText: nutrition.measurements,
+    );
+  }
 
   @override
   final String name;
@@ -27,6 +67,16 @@ class Ingredient implements Food {
 
   /// Mass amounts as written in the catalog, in file order.
   final Map<String, String> measurementText;
+
+  Map<String, Object?> get document => {
+    'serving size': servingSizeText,
+    'servings per container': servings,
+    'container price': totalPrice.dollars,
+    'nutrition facts': {
+      'Calories': '${servingNutrition.calories.plainNumber} Cal',
+      for (final MapEntry(:key, :value) in measurementText.entries) key: value,
+    },
+  };
 
   @override
   Price get servingPrice => totalPrice / servings;

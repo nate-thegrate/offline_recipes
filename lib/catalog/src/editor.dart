@@ -1,39 +1,5 @@
 part of '../catalog.dart';
 
-Recipe rebindRecipe(Recipe recipe, List<Ingredient> pantry) {
-  return Recipe(
-    name: recipe.name,
-    tags: recipe.tags,
-    servings: recipe.servings,
-    servingsSpecified: recipe.servingsSpecified,
-    calculatesNutrition: recipe.calculatesNutrition,
-    lines: [for (final line in recipe.lines) _line(line.text, pantry, group: line.group)],
-    directions: recipe.directions,
-  );
-}
-
-Map<String, Object?> ingredientDocument(Ingredient ingredient) {
-  return {
-    'serving size': ingredient.servingSizeText,
-    'servings per container': ingredient.servings,
-    'container price': ingredient.totalPrice.dollars,
-    'nutrition facts': {
-      'Calories': '${ingredient.servingNutrition.calories.plainNumber} Cal',
-      for (final MapEntry(:key, :value) in ingredient.measurementText.entries) key: value,
-    },
-  };
-}
-
-Map<String, Object?> recipeDocument(Recipe recipe) {
-  return {
-    'tags': recipe.tags.join(', '),
-    if (recipe.servingsSpecified) 'servings': recipe.servings,
-    if (!recipe.calculatesNutrition) 'calculate nutrition & price': false,
-    'ingredients': _ingredientItems(recipe.lines),
-    'directions': recipe.directions,
-  };
-}
-
 List<Object> _ingredientItems(List<RecipeLine> lines) {
   final items = <Object>[];
   String? group;
@@ -72,61 +38,13 @@ String directionFromField(String field) {
   return stored;
 }
 
-Ingredient ingredientFromEditor({
-  required String name,
-  required String servingSize,
-  required String servings,
-  required String price,
-  required String calories,
-  required List<({String name, String amount})> nutrients,
-}) {
-  final ingredientName = _requiredName(name);
-  final (:text, :measure) = _servingMeasure(servingSize);
-  final amounts = _nutrientAmounts(nutrients);
-  final servingCount = _positiveNumber(servings, 'Servings per container');
-  final containerPrice = _price(price);
-  final nutrition = _nutritionFromAmounts(_calories(calories), amounts);
-  return Ingredient(
-    name: ingredientName,
-    servingSize: measure,
-    servingSizeText: text,
-    servings: servingCount,
-    totalPrice: Price(containerPrice),
-    servingNutrition: nutrition.facts,
-    measurementText: nutrition.measurements,
-  );
-}
-
-Recipe recipeFromEditor({
-  required String name,
-  required String tags,
-  required String servings,
-  required bool calculatesNutrition,
-  required String ingredientText,
-  required List<String> directions,
-}) {
-  final servingText = servings.trim();
-  return Recipe(
-    name: _requiredName(name),
-    tags: _tags(tags),
-    servings: servingText.isEmpty ? 1 : _positiveNumber(servingText, 'Servings'),
-    servingsSpecified: servingText.isNotEmpty,
-    calculatesNutrition: calculatesNutrition,
-    lines: _linesFromText(ingredientText, ingredients),
-    directions: [
-      for (final direction in directions)
-        if (direction.trim().isNotEmpty) direction,
-    ],
-  );
-}
-
 ({String text, Measure measure}) _servingMeasure(String servingSize) {
   final text = servingSize.trim();
   if (text.isEmpty) {
     throw const FormatException('Enter a serving size, such as 1 cup');
   }
   try {
-    return (text: text, measure: parseMeasure(text));
+    return (text: text, measure: Measure.parseExact(text));
   } on FormatException {
     throw const FormatException('Enter a serving size, such as 1 cup');
   }
@@ -162,7 +80,7 @@ List<RecipeLine> _linesFromText(String text, List<Ingredient> pantry) {
       group = line.substring(0, line.length - 1).trim();
       continue;
     }
-    lines.add(_line(line, pantry, group: group));
+    lines.add(RecipeLine.parse(line, pantry, group: group));
   }
   return lines;
 }
@@ -171,7 +89,7 @@ bool _isGroupHeader(String line) {
   if (!line.endsWith(':')) return false;
   final name = line.substring(0, line.length - 1).trim();
   if (name.isEmpty) return false;
-  return tryParseAmount(name) == null;
+  return ParsedAmount.tryParse(name) == null;
 }
 
 String _requiredName(String text) {

@@ -35,7 +35,7 @@ class CatalogPage extends StatelessWidget {
     final route = MaterialPageRoute<void>(
       builder: (context) => Scaffold(
         appBar: AppBar(
-          title: Text(titleCase(recipe.name)),
+          title: Text(recipe.name.titleCase),
           actions: [
             _RecipeActions(recipe: recipe, popWhenDeleted: true),
             const SettingsButton(),
@@ -168,8 +168,8 @@ class _RecipeTileState extends State<_RecipeTile> {
 
     return ListTile(
       selected: _highlighted.value,
-      title: Text(titleCase(recipe.name)),
-      subtitle: Text(recipeSubtitle(recipe)),
+      title: Text(recipe.name.titleCase),
+      subtitle: Text(recipe.subtitle),
       trailing: trailing,
       onTap: () {
         selected.value = recipe;
@@ -248,7 +248,7 @@ class _TagChip extends StatelessWidget {
       onLongPress: () => _toggleTag(option),
       child: FilterChip(
         key: ValueKey('tag-$option'),
-        label: Text(titleCase(option)),
+        label: Text(option.titleCase),
         selected: selected,
         onSelected: (_) => _selectTag(option),
       ),
@@ -277,7 +277,7 @@ class _RecipeActions extends SignalWidget {
 
   @override
   Widget build(BuildContext context) {
-    final recipe = findRecipe(this.recipe.name) ?? this.recipe;
+    final recipe = recipes.findByName(this.recipe.name) ?? this.recipe;
     return Row(
       mainAxisSize: .min,
       children: [
@@ -297,7 +297,7 @@ class _RecipeActions extends SignalWidget {
           onPressed: () async {
             final confirmed = await confirmDelete(
               context,
-              'Delete ${titleCase(recipe.name)}?',
+              'Delete ${recipe.name.titleCase}?',
               'This removes the recipe from the cookbook.',
             );
             if (!confirmed || !context.mounted) return;
@@ -320,7 +320,7 @@ class RecipeDetail extends SignalWidget {
 
   @override
   Widget build(BuildContext context) {
-    final recipe = findRecipe(this.recipe.name) ?? this.recipe;
+    final recipe = recipes.findByName(this.recipe.name) ?? this.recipe;
     final names = unitNames.value;
     final nutrition = showNutrition.value;
     final theme = Theme.of(context);
@@ -331,13 +331,13 @@ class RecipeDetail extends SignalWidget {
         Row(
           crossAxisAlignment: .start,
           children: [
-            Expanded(child: Text(titleCase(recipe.name), style: textTheme.headlineMedium)),
+            Expanded(child: Text(recipe.name.titleCase, style: textTheme.headlineMedium)),
             _RecipeActions(recipe: recipe, popWhenDeleted: false),
           ],
         ),
         const SizedBox(height: 8),
       ],
-      Text(recipeSubtitle(recipe), style: textTheme.bodyMedium),
+      Text(recipe.subtitle, style: textTheme.bodyMedium),
       const SizedBox(height: 24),
       Text('Ingredients', style: textTheme.titleMedium),
       const SizedBox(height: 8),
@@ -346,9 +346,9 @@ class RecipeDetail extends SignalWidget {
           if (previousGroup = group case final group?)
             Padding(
               padding: const .only(top: 8, bottom: 4),
-              child: Text(titleCase(group), style: textTheme.titleSmall),
+              child: Text(group.titleCase, style: textTheme.titleSmall),
             ),
-        _IngredientTile(key: ValueKey('ingredient-$index'), text: displayIngredient(text, names)),
+        _IngredientTile(key: ValueKey('ingredient-$index'), text: names.display(text)),
       ],
       const SizedBox(height: 18),
       Text('Directions', style: textTheme.titleMedium),
@@ -473,28 +473,31 @@ class _Stat extends StatelessWidget {
   }
 }
 
-String recipeSubtitle(Recipe recipe) {
-  final parts = <String>[recipe.tags.map(titleCase).join(', ')];
-  if (recipe.servingsSpecified) {
-    final noun = recipe.servings == 1 ? 'serving' : 'servings';
-    parts.add('${recipe.servings.plainNumber} $noun');
+extension RecipeSubtitle on Recipe {
+  String get subtitle {
+    final parts = <String>[tags.map((tag) => tag.titleCase).join(', ')];
+    if (servingsSpecified) {
+      final noun = servings == 1 ? 'serving' : 'servings';
+      parts.add('${servings.plainNumber} $noun');
+    }
+    return parts.where((part) => part.isNotEmpty).join(' · ');
   }
-  return parts.where((part) => part.isNotEmpty).join(' · ');
 }
 
-String titleCase(String text) {
-  return text
-      .split(' ')
-      .map((word) {
-        return word
-            .split('-')
-            .map((part) {
-              if (part.isEmpty) return part;
-              return part[0].toUpperCase() + part.substring(1);
-            })
-            .join('-');
-      })
-      .join(' ');
+extension TitleCase on String {
+  String get titleCase {
+    return split(' ')
+        .map((word) {
+          return word
+              .split('-')
+              .map((part) {
+                if (part.isEmpty) return part;
+                return part[0].toUpperCase() + part.substring(1);
+              })
+              .join('-');
+        })
+        .join(' ');
+  }
 }
 
 TextSpan _directionSpan(String source) {
