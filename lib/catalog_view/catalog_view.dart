@@ -537,6 +537,7 @@ class _Stat extends StatelessWidget {
 
 extension RecipeSubtitle on Recipe {
   String get subtitle {
+    final Recipe(:tags, :servings, :servingsSpecified) = this;
     final label = tags.map((tag) => tag.titleCase).join(', ');
     if (!servingsSpecified) return label;
     final noun = servings == 1 ? 'serving' : 'servings';
@@ -591,19 +592,18 @@ TextSpan _directionSpan(String source) {
   return TextSpan(children: children);
 }
 
+void _cancel() => navigator.pop();
+void _confirm() => navigator.pop(true);
+
 Future<bool> confirmDelete(BuildContext context, String title, String message) async {
   final answer = await showDialog<bool>(
     context: context,
     builder: (context) => AlertDialog(
       title: Text(title),
       content: Text(message),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-        TextButton(
-          key: const ValueKey('confirm-delete'),
-          onPressed: () => Navigator.pop(context, true),
-          child: const Text('Delete'),
-        ),
+      actions: const [
+        TextButton(onPressed: _cancel, child: Text('Cancel')),
+        TextButton(key: ValueKey('confirm-delete'), onPressed: _confirm, child: Text('Delete')),
       ],
     ),
   );

@@ -420,6 +420,26 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  test('a recipe subtitle names the tags on that recipe', () {
+    const assigned = ['breakfast', 'dessert'];
+    final recipe = Recipe(
+      name: 'test toast',
+      tags: assigned,
+      servings: 2,
+      servingsSpecified: true,
+      calculatesNutrition: false,
+      lines: const [],
+      directions: const [],
+    );
+    final label = assigned.map((tag) => tag.titleCase).join(', ');
+
+    expect(recipe.subtitle, '$label · ${recipe.servings.plainNumber} servings');
+    for (final tag in tags) {
+      if (assigned.contains(tag)) continue;
+      expect(recipe.subtitle, isNot(contains(tag.titleCase)));
+    }
+  });
+
   testWidgets('a narrow catalog bar lets the search field fill the row', (tester) async {
     const width = 400.0;
     await tester.binding.setSurfaceSize(const Size(width, 800));
