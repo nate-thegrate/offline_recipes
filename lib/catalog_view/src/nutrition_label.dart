@@ -24,8 +24,8 @@ class NutritionLabel extends StatelessWidget {
       if (line case RecipeLine(optional: false, ignored: false, :final food?)) {
         final ratio = food.servings;
         calories += food.servingNutrition.calories * ratio;
-        for (final MapEntry(:key, :value) in food.ingredient.measurementText.entries) {
-          final scaled = Measure.parse(value) * ratio;
+        for (final MapEntry(:key, :value) in food.ingredient.measurements.entries) {
+          final scaled = value * ratio;
           if (totals[key] case final previous?) {
             totals[key] = previous + scaled;
           } else {

@@ -1,5 +1,7 @@
 part of '../catalog.dart';
 
+final _whitespace = RegExp(r'\s+');
+
 Map<dynamic, dynamic> _asMap(Object? document) {
   if (document is! Map) throw const FormatException('Expected a YAML map');
   return document;
@@ -72,10 +74,11 @@ List<RecipeLine> _lines(Object? value, List<Ingredient> pantry, String recipe) {
   if (value is! List) {
     throw FormatException('Expected ingredients for $recipe');
   }
+  final index = _indexByName(pantry);
   final lines = <RecipeLine>[];
   for (final item in value) {
     if (item is String) {
-      lines.add(RecipeLine.parse(item, pantry));
+      lines.add(RecipeLine.parse(item, pantry, index: index));
       continue;
     }
     if (item is! Map || item.keys.length != 1) {
@@ -90,7 +93,7 @@ List<RecipeLine> _lines(Object? value, List<Ingredient> pantry, String recipe) {
       if (child is! String) {
         throw FormatException('Expected text in $recipe $group');
       }
-      lines.add(RecipeLine.parse(child, pantry, group: group));
+      lines.add(RecipeLine.parse(child, pantry, group: group, index: index));
     }
   }
   return lines;
@@ -100,7 +103,7 @@ String _normalized(String name) {
   var key = name.toLowerCase();
   final parenthesis = key.indexOf('(');
   if (parenthesis != -1) key = key.substring(0, parenthesis);
-  key = key.replaceAll(RegExp(r'\s+'), ' ').trim();
+  key = key.replaceAll(_whitespace, ' ').trim();
   if (key.endsWith(',')) key = key.substring(0, key.length - 1).trim();
   return key;
 }

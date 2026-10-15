@@ -9,7 +9,8 @@ class Ingredient implements Food {
     required this.servingNutrition,
     this.measurementText = const {},
     String? servingSizeText,
-  }) : servingSizeText = servingSizeText ?? servingSize.plainText,
+  }) : lowercaseName = name.toLowerCase(),
+       servingSizeText = servingSizeText ?? servingSize.plainText,
        assert(servings > 0, 'A container needs at least one serving');
 
   factory parse(String name, Map<String, Object?> fields) {
@@ -54,6 +55,7 @@ class Ingredient implements Food {
 
   @override
   final String name;
+  final String lowercaseName;
   final Measure servingSize;
 
   /// Serving size as written, such as "1 cup" or "100 g".
@@ -67,6 +69,11 @@ class Ingredient implements Food {
 
   /// Mass amounts as written in the catalog, in file order.
   final Map<String, String> measurementText;
+
+  /// [measurementText] parsed into measures, in file order.
+  late final Map<String, Measure> measurements = {
+    for (final MapEntry(:key, :value) in measurementText.entries) key: Measure.parse(value),
+  };
 
   Map<String, Object?> get document => {
     'serving size': servingSizeText,

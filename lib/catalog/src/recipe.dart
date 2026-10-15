@@ -1,30 +1,67 @@
 part of '../catalog.dart';
 
-class RecipeLine {
-  const new(this.text, {this.food, this.group, this.optional = false, this.ignored = false});
+typedef _ShownMeasure = ({String prefix, Measure measure, String tail});
 
-  factory parse(String text, List<Ingredient> pantry, {String? group}) {
+class RecipeLine {
+  const new(this.text, {this.food, this.group, this.optional = false, this.ignored = false})
+    : _shown = null;
+
+  factory parse(
+    String text,
+    List<Ingredient> pantry, {
+    String? group,
+    Map<String, Ingredient>? index,
+  }) {
     final parsed = ParsedAmount.tryParse(text);
     final name = parsed == null || parsed.name.isEmpty ? text : parsed.name;
     final ignored = ignoredIngredientNames.contains(_normalized(name));
     IngredientAmount? food;
-    if (parsed != null && parsed.name.isNotEmpty) {
-      food = pantry.findByName(_canonicalName(parsed.name))?.used(parsed.measure);
+    _ShownMeasure? shown;
+    if (parsed != null) {
+      final trimmed = text.trim();
+      shown = (
+        prefix: trimmed.substring(0, parsed.amountEnd),
+        measure: parsed.measure,
+        tail: trimmed.substring(parsed.unitEnd),
+      );
+      if (parsed.name.isNotEmpty) {
+        final key = _canonicalName(parsed.name);
+        final ingredient = index != null ? index[key] : pantry.findByName(key);
+        food = ingredient?.used(parsed.measure);
+      }
     }
-    return RecipeLine(
+    return RecipeLine._(
       text,
       food: food,
       group: group,
       optional: text.toLowerCase().contains('(optional)'),
       ignored: ignored,
+      shown: shown,
     );
   }
+
+  new _(
+    this.text, {
+    required this.food,
+    required this.group,
+    required this.optional,
+    required this.ignored,
+    required this._shown,
+  });
 
   final String text;
   final IngredientAmount? food;
   final String? group;
   final bool optional;
   final bool ignored;
+  final _ShownMeasure? _shown;
+
+  String display(UnitNames names) {
+    final shown = _shown;
+    if (shown == null) return names.display(text);
+    final (:prefix, :measure, :tail) = shown;
+    return names.spellAmount(measure, prefix, tail);
+  }
 }
 
 class Recipe implements Food {
@@ -114,13 +151,17 @@ class Recipe implements Food {
   };
 
   Recipe rebind(List<Ingredient> pantry) {
+    final index = _indexByName(pantry);
     return Recipe(
       name: name,
       tags: tags,
       servings: servings,
       servingsSpecified: servingsSpecified,
       calculatesNutrition: calculatesNutrition,
-      lines: [for (final line in lines) RecipeLine.parse(line.text, pantry, group: line.group)],
+      lines: [
+        for (final line in lines)
+          RecipeLine.parse(line.text, pantry, group: line.group, index: index),
+      ],
       directions: directions,
     );
   }
@@ -170,13 +211,18 @@ class Recipe implements Food {
   }
 
   NutritionFacts _sumNutrition() {
-    NutritionFacts sum = .none;
+    var calories = 0.0;
+    final grams = <String, double>{};
     for (final line in lines) {
       if (line case RecipeLine(optional: false, ignored: false, :final food?)) {
-        sum += food.totalNutrition;
+        final facts = food.totalNutrition;
+        calories += facts.calories;
+        for (final MapEntry(:key, :value) in facts.grams.entries) {
+          grams[key] = (grams[key] ?? 0) + value;
+        }
       }
     }
-    return sum;
+    return NutritionFacts(calories: calories, grams: grams);
   }
 
   String _searchableText() {

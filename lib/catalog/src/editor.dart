@@ -1,5 +1,7 @@
 part of '../catalog.dart';
 
+final _calorieWord = RegExp(r'cal', caseSensitive: false);
+
 List<Object> _ingredientItems(List<RecipeLine> lines) {
   final items = <Object>[];
   String? group;
@@ -72,6 +74,7 @@ Map<String, String> _nutrientAmounts(List<({String name, String amount})> nutrie
 
 List<RecipeLine> _linesFromText(String text, List<Ingredient> pantry) {
   final lines = <RecipeLine>[];
+  final index = _indexByName(pantry);
   String? group;
   for (final raw in text.split('\n')) {
     final line = raw.trim();
@@ -80,7 +83,7 @@ List<RecipeLine> _linesFromText(String text, List<Ingredient> pantry) {
       group = line.substring(0, line.length - 1).trim();
       continue;
     }
-    lines.add(RecipeLine.parse(line, pantry, group: group));
+    lines.add(RecipeLine.parse(line, pantry, group: group, index: index));
   }
   return lines;
 }
@@ -119,10 +122,7 @@ double _price(String text) {
 double _calories(String text) {
   final trimmed = text.trim();
   if (trimmed.isEmpty) return 0;
-  final number = trimmed
-      .replaceAll(',', '')
-      .replaceAll(RegExp(r'cal', caseSensitive: false), '')
-      .trim();
+  final number = trimmed.replaceAll(',', '').replaceAll(_calorieWord, '').trim();
   final parsed = double.tryParse(number);
   if (parsed == null) throw const FormatException('Enter calories as a number');
   if (parsed < 0) throw const FormatException('Calories cannot be negative');

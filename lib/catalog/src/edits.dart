@@ -77,14 +77,12 @@ Future<void> reloadCatalogEdits() async {
 void applyCatalogEdits(CatalogEdits edits, {String? focus}) {
   final pantry = <Ingredient>[
     for (final ingredient in bundledIngredients)
-      if (!edits.deletedIngredients.contains(ingredient.name.toLowerCase())) ingredient,
+      if (!edits.deletedIngredients.contains(ingredient.lowercaseName)) ingredient,
   ];
   for (final MapEntry(:key, :value) in edits.ingredients.entries) {
     if (edits.deletedIngredients.contains(key.toLowerCase())) continue;
     final ingredient = Ingredient.parse(key, value);
-    final index = pantry.indexWhere(
-      (item) => item.name.toLowerCase() == ingredient.name.toLowerCase(),
-    );
+    final index = pantry.indexWhere((item) => item.lowercaseName == ingredient.lowercaseName);
     if (index == -1) {
       pantry.add(ingredient);
     } else {

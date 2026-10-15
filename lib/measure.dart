@@ -10,9 +10,16 @@ enum UnitNames {
     final text = source.trim();
     final parsed = ParsedAmount.tryParse(text);
     if (parsed == null) return source;
-    final spelling = parsed.measure.unit.name.spelling(parsed.measure.amount, this);
-    final prefix = text.substring(0, parsed.amountEnd);
-    final tail = text.substring(parsed.unitEnd);
+    return spellAmount(
+      parsed.measure,
+      text.substring(0, parsed.amountEnd),
+      text.substring(parsed.unitEnd),
+    );
+  }
+
+  /// [prefix] is the written amount and [tail] is the text after the unit spelling.
+  String spellAmount(Measure measure, String prefix, String tail) {
+    final spelling = measure.unit.name.spelling(measure.amount, this);
     return '$prefix $spelling$tail';
   }
 }
@@ -33,7 +40,7 @@ class Measure {
   const new(this.amount, this.unit);
 
   factory parse(String text) {
-    final words = text.trim().split(RegExp(r'\s+'));
+    final words = text.trim().split(_whitespace);
     if (words.first.isEmpty) {
       throw FormatException('Cannot read a measure from "$text"');
     }
@@ -130,6 +137,8 @@ class ParsedAmount {
     );
   }
 }
+
+final _whitespace = RegExp(r'\s+');
 
 final _amount = RegExp(
   r'^(?:(?<whole>\d+)\s+(?<mixedNumerator>\d+)/(?<mixedDenominator>\d+)'

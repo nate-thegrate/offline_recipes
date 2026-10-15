@@ -31,10 +31,7 @@ class NutritionFacts {
   static const none = NutritionFacts(calories: 0, grams: {});
 
   NutritionFacts operator +(NutritionFacts other) {
-    final combined = <String, double>{};
-    for (final MapEntry(:key, :value) in grams.entries) {
-      combined[key] = value;
-    }
+    final combined = Map<String, double>.of(grams);
     for (final MapEntry(:key, :value) in other.grams.entries) {
       combined[key] = (combined[key] ?? 0) + value;
     }
@@ -94,9 +91,8 @@ sealed class Unit {
   /// The suffix keeps its leading whitespace. The spelling length is the input length minus the
   /// suffix length.
   static ({Unit unit, String rest})? matchLeading(String text) {
-    final folded = text.replaceAll('\u03BC', '\u00B5');
     for (final spelling in _unitSpellings) {
-      if (!_hasSpellingPrefix(folded, spelling)) continue;
+      if (!_hasSpellingPrefix(text, spelling)) continue;
       return (unit: spelling.unit, rest: text.substring(spelling.text.length));
     }
     return null;
@@ -201,9 +197,11 @@ class BaseUnit extends Unit {
 }
 
 class _UnitSpelling {
-  const new(this.text, this.unit, {required this.caseSensitive});
+  new(this.text, this.unit, {required this.caseSensitive})
+    : folded = caseSensitive ? text : text.toLowerCase();
 
   final String text;
+  final String folded;
   final Unit unit;
   final bool caseSensitive;
 }
@@ -213,16 +211,11 @@ final List<_UnitSpelling> _unitSpellings = _buildUnitSpellings();
 List<_UnitSpelling> _buildUnitSpellings() {
   const units = <Unit>[.mcg, .mg, .g, .oz, .lb, .ml, .liter, .tsp, .tbsp, .flOz, .cup];
   final spellings = <_UnitSpelling>[];
+  final seen = <String>{};
   void add(String text, Unit unit) {
     if (text.isEmpty) return;
     final caseSensitive = text.length == 1;
-    for (final existing in spellings) {
-      final sameText = caseSensitive
-          ? existing.text == text
-          : existing.text.toLowerCase() == text.toLowerCase();
-      if (!sameText) continue;
-      return;
-    }
+    if (!seen.add(caseSensitive ? text : text.toLowerCase())) return;
     spellings.add(_UnitSpelling(text, unit, caseSensitive: caseSensitive));
   }
 
@@ -239,13 +232,26 @@ List<_UnitSpelling> _buildUnitSpellings() {
 }
 
 bool _hasSpellingPrefix(String text, _UnitSpelling spelling) {
-  final alias = spelling.text;
-  if (text.length < alias.length) return false;
-  final head = text.substring(0, alias.length);
-  final matches = spelling.caseSensitive
-      ? head == alias
-      : head.toLowerCase() == alias.toLowerCase();
-  if (!matches) return false;
-  if (text.length == alias.length) return true;
-  return text[alias.length].trim().isEmpty;
+  final length = spelling.text.length;
+  if (text.length < length || !_prefixEquals(text, spelling)) return false;
+  if (text.length == length) return true;
+  final next = text.codeUnitAt(length);
+  if (next == 0x20) return true;
+  return text[length].trim().isEmpty;
+}
+
+bool _prefixEquals(String text, _UnitSpelling spelling) {
+  final alias = spelling.caseSensitive ? spelling.text : spelling.folded;
+  for (var i = 0; i < alias.length; i++) {
+    final code = spelling.caseSensitive ? text.codeUnitAt(i) : _foldUnit(text.codeUnitAt(i));
+    if (code != alias.codeUnitAt(i)) return false;
+  }
+  return true;
+}
+
+/// ASCII lowercase, and the Greek mu that some keyboards use for micrograms.
+int _foldUnit(int code) {
+  if (code >= 0x41 && code <= 0x5A) return code + 0x20;
+  if (code == 0x03BC) return 0x00B5;
+  return code;
 }

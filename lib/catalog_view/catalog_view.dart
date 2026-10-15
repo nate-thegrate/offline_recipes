@@ -156,7 +156,7 @@ class _RecipeTileState extends State<_RecipeTile> {
   @override
   Widget build(BuildContext context) {
     final recipe = widget.recipe;
-    late final price = switch (listPrice.value) {
+    final price = switch (listPrice.value) {
       .hidden => null,
       .serving => recipe.servingPrice,
       .recipe => recipe.totalPrice,
@@ -321,8 +321,6 @@ class RecipeDetail extends SignalWidget {
   @override
   Widget build(BuildContext context) {
     final recipe = recipes.findByName(this.recipe.name) ?? this.recipe;
-    final names = unitNames.value;
-    final nutrition = showNutrition.value;
     final theme = Theme.of(context);
     final textTheme = theme.textTheme;
     String? previousGroup;
@@ -341,14 +339,14 @@ class RecipeDetail extends SignalWidget {
       const SizedBox(height: 24),
       Text('Ingredients', style: textTheme.titleMedium),
       const SizedBox(height: 8),
-      for (final (index, RecipeLine(:group, :text)) in recipe.lines.indexed) ...[
-        if (group != previousGroup)
-          if (previousGroup = group case final group?)
+      for (final (index, line) in recipe.lines.indexed) ...[
+        if (line.group != previousGroup)
+          if (previousGroup = line.group case final group?)
             Padding(
               padding: const .only(top: 8, bottom: 4),
               child: Text(group.titleCase, style: textTheme.titleSmall),
             ),
-        _IngredientTile(key: ValueKey('ingredient-$index'), text: names.display(text)),
+        _IngredientTile(key: ValueKey('ingredient-$index'), line: line),
       ],
       const SizedBox(height: 18),
       Text('Directions', style: textTheme.titleMedium),
@@ -367,7 +365,7 @@ class RecipeDetail extends SignalWidget {
       if (recipe.isPriced) ...[
         const SizedBox(height: 12),
         _PriceSummary(recipe: recipe),
-        if (nutrition) ...[const SizedBox(height: 16), NutritionLabel(recipe)],
+        _RecipeNutrition(recipe: recipe),
       ],
     ];
 
@@ -386,10 +384,25 @@ class RecipeDetail extends SignalWidget {
   }
 }
 
-class _IngredientTile extends SignalStatefulWidget {
-  const new({required this.text, super.key});
+class _RecipeNutrition extends SignalWidget {
+  const new({required this.recipe});
 
-  final String text;
+  final Recipe recipe;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!showNutrition.value) return const SizedBox.shrink();
+    return Padding(
+      padding: const .only(top: 16),
+      child: NutritionLabel(recipe),
+    );
+  }
+}
+
+class _IngredientTile extends SignalStatefulWidget {
+  const new({required this.line, super.key});
+
+  final RecipeLine line;
 
   @override
   State<_IngredientTile> createState() => _IngredientTileState();
@@ -412,6 +425,7 @@ class _IngredientTileState extends State<_IngredientTile>
   Widget build(BuildContext context) {
     super.build(context);
     final checked = _checked.value;
+    final text = widget.line.display(unitNames.value);
     TextStyle? style;
     if (checked) style = TextStyle(color: ColorScheme.of(context).onSurface.withValues(alpha: 0.5));
 
@@ -426,7 +440,7 @@ class _IngredientTileState extends State<_IngredientTile>
       horizontalTitleGap: 4,
       minVerticalPadding: 0,
       titleAlignment: .top,
-      title: Text(widget.text, style: style),
+      title: Text(text, style: style),
     );
   }
 }
@@ -475,12 +489,12 @@ class _Stat extends StatelessWidget {
 
 extension RecipeSubtitle on Recipe {
   String get subtitle {
-    final parts = <String>[tags.map((tag) => tag.titleCase).join(', ')];
-    if (servingsSpecified) {
-      final noun = servings == 1 ? 'serving' : 'servings';
-      parts.add('${servings.plainNumber} $noun');
-    }
-    return parts.where((part) => part.isNotEmpty).join(' · ');
+    final label = tags.map((tag) => tag.titleCase).join(', ');
+    if (!servingsSpecified) return label;
+    final noun = servings == 1 ? 'serving' : 'servings';
+    final count = '${servings.plainNumber} $noun';
+    if (label.isEmpty) return count;
+    return '$label · $count';
   }
 }
 
@@ -500,12 +514,13 @@ extension TitleCase on String {
   }
 }
 
+final _directionMarkup = RegExp(r'\*\*(.+?)\*\*|\[(.+?)\]\([^)]*\)');
+
 TextSpan _directionSpan(String source) {
   final text = source.replaceAll('<br>', '\n').trim();
-  final pattern = RegExp(r'\*\*(.+?)\*\*|\[(.+?)\]\([^)]*\)');
   final children = <TextSpan>[];
   var index = 0;
-  for (final match in pattern.allMatches(text)) {
+  for (final match in _directionMarkup.allMatches(text)) {
     if (match.start > index) {
       children.add(TextSpan(text: text.substring(index, match.start)));
     }

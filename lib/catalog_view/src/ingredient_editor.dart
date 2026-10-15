@@ -1,22 +1,16 @@
 part of '../catalog_view.dart';
 
-class IngredientListPage extends SignalStatefulWidget {
+void _openIngredientEditor([Ingredient? ingredient]) {
+  navigator.push(
+    MaterialPageRoute<void>(builder: (context) => IngredientEditor(ingredient: ingredient)),
+  );
+}
+
+class IngredientListPage extends StatelessWidget {
   const new({super.key});
 
   @override
-  State<IngredientListPage> createState() => _IngredientListPageState();
-}
-
-class _IngredientListPageState extends State<IngredientListPage> {
-  static void _open([Ingredient? ingredient]) {
-    navigator.push(
-      MaterialPageRoute<void>(builder: (context) => IngredientEditor(ingredient: ingredient)),
-    );
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final matching = ingredients.matching.value;
     return Scaffold(
       appBar: AppBar(
         title: const Text('Ingredients'),
@@ -24,7 +18,7 @@ class _IngredientListPageState extends State<IngredientListPage> {
           IconButton(
             key: ValueKey('new-ingredient'),
             tooltip: 'New ingredient',
-            onPressed: _open,
+            onPressed: _openIngredientEditor,
             icon: Icon(Icons.add),
           ),
         ],
@@ -44,26 +38,33 @@ class _IngredientListPageState extends State<IngredientListPage> {
               ),
             ),
           ),
-          Expanded(
-            child: matching.isEmpty
-                ? const Center(child: Text('No ingredients match.'))
-                : ListView.separated(
-                    key: const ValueKey('ingredient-list'),
-                    itemCount: matching.length,
-                    separatorBuilder: (context, index) => const Divider(height: 1),
-                    itemBuilder: (context, index) {
-                      final ingredient = matching[index];
-                      return ListTile(
-                        key: ValueKey('ingredient-${ingredient.name}'),
-                        title: Text(ingredient.name.titleCase),
-                        subtitle: Text('${ingredient.servingSizeText} · ${ingredient.totalPrice}'),
-                        onTap: () => _open(ingredient),
-                      );
-                    },
-                  ),
-          ),
+          const Expanded(child: _IngredientMatches()),
         ],
       ),
+    );
+  }
+}
+
+class _IngredientMatches extends SignalWidget {
+  const new();
+
+  @override
+  Widget build(BuildContext context) {
+    final matching = ingredients.matching.value;
+    if (matching.isEmpty) return const Center(child: Text('No ingredients match.'));
+    return ListView.separated(
+      key: const ValueKey('ingredient-list'),
+      itemCount: matching.length,
+      separatorBuilder: (context, index) => const Divider(height: 1),
+      itemBuilder: (context, index) {
+        final ingredient = matching[index];
+        return ListTile(
+          key: ValueKey('ingredient-${ingredient.name}'),
+          title: Text(ingredient.name.titleCase),
+          subtitle: Text('${ingredient.servingSizeText} · ${ingredient.totalPrice}'),
+          onTap: () => _openIngredientEditor(ingredient),
+        );
+      },
     );
   }
 }

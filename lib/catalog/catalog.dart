@@ -35,11 +35,22 @@ const ingredientAliases = <String, String>{
 };
 
 final ingredients = MatchingList(_matchingIngredients);
+
+final _sortedIngredients = computed(_sortIngredients);
+
+List<Ingredient> _sortIngredients() {
+  final sorted = [...ingredients];
+  sorted.sort((a, b) => a.lowercaseName.compareTo(b.lowercaseName));
+  return sorted;
+}
+
 List<Ingredient> _matchingIngredients(String query) {
+  final sorted = _sortedIngredients.value;
+  if (query.isEmpty) return sorted;
   return [
-    for (final ingredient in ingredients)
-      if (ingredient.name.toLowerCase().contains(query)) ingredient,
-  ]..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+    for (final ingredient in sorted)
+      if (ingredient.lowercaseName.contains(query)) ingredient,
+  ];
 }
 
 final recipes = MatchingList(_matchingRecipes);
@@ -54,11 +65,15 @@ List<Recipe> _matchingRecipes(String query) {
 /// Tags a recipe must have to show in the browser. Empty shows every recipe.
 final selectedTags = setSignal(<String>{});
 
+Map<String, Ingredient> _indexByName(Iterable<Ingredient> pantry) => {
+  for (final ingredient in pantry) ingredient.lowercaseName: ingredient,
+};
+
 extension IngredientNames on Iterable<Ingredient> {
   Ingredient? findByName(String name) {
     final key = name.toLowerCase();
     for (final ingredient in this) {
-      if (ingredient.name.toLowerCase() == key) return ingredient;
+      if (ingredient.lowercaseName == key) return ingredient;
     }
     return null;
   }
@@ -84,14 +99,17 @@ List<Recipe> get bundledRecipes => List.unmodifiable(_bundledRecipes);
 
 late final Map<String, Measure> dailyValues;
 
-List<String> get tags {
-  final names = <String>[];
+final _tagNames = computed(_collectTags);
+
+/// Tag names in the order recipes first mention them.
+List<String> get tags => _tagNames.value;
+
+List<String> _collectTags() {
+  final names = <String>{};
   for (final recipe in recipes) {
-    for (final name in recipe.tags) {
-      if (!names.contains(name)) names.add(name);
-    }
+    names.addAll(recipe.tags);
   }
-  return names;
+  return names.toList();
 }
 
 Future<void> loadCatalog() async {
