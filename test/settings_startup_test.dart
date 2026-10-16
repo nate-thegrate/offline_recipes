@@ -31,7 +31,7 @@ void main() {
     await loadSettings();
     expect(colorSchemeHue.value, 200);
     expect(hueForTag(tag), 15);
-    expect(tagHues.value.containsKey(other), isFalse);
+    expect(tagHues.containsKey(other), isFalse);
     expect(colorSchemeSeed.value.toARGB32(), colorForHue(200).toARGB32());
 
     await tester.binding.setSurfaceSize(const Size(400, 1400));

@@ -72,16 +72,16 @@ void main() {
     await loadSettings();
 
     expect(hueForTag(kept), 12.5);
-    expect(tagHues.value.containsKey(dropped), isFalse);
+    expect(tagHues.containsKey(dropped), isFalse);
     expect(hueForTag(dropped), droppedHue);
     expect(hueForTag('retired tag'), 80);
-    expect(tagHues.value[untouched], 400);
+    expect(tagHues[untouched], 400);
     expect(hueForTag(untouched), 360);
     expect(hueForTag(untouched), isNot(untouchedHue));
 
     await preferences.setString('tagHues', 'nope');
     await loadSettings();
-    expect(tagHues.value, isEmpty);
+    expect(tagHues, isEmpty);
     expect(hueForTag(kept), keptDefault);
     expect(hueForTag('retired tag'), defaultHueForTag('retired tag'));
   });
@@ -209,7 +209,7 @@ void main() {
     const hue = 200.0;
     final colored = tags.first;
     final plain = tags[1];
-    tagHues.value = {colored: hue};
+    tagHues[colored] = hue;
 
     await _size(tester, const Size(400, 800));
     await tester.pumpWidget(const App());
@@ -261,13 +261,13 @@ void main() {
 
     final shown = tester.widget<Slider>(slider).value;
     expect((shown - start).abs(), greaterThan(5));
-    expect(tagHues.value.containsKey(tag), isFalse);
+    expect(tagHues.containsKey(tag), isFalse);
     expect(hueForTag(other), otherHue);
 
     await gesture.up();
     await tester.pumpAndSettle();
     final saved = tester.widget<Slider>(slider).value;
-    expect(tagHues.value[tag], saved);
+    expect(tagHues[tag], saved);
 
     await _closeSettings(tester);
     final brightness = Theme.of(tester.element(find.byType(CatalogPage))).brightness;

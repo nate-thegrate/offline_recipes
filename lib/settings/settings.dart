@@ -61,7 +61,7 @@ final _previewHue = signal(colorSchemeHue.peek());
 final Computed<Color> colorSchemeSeed = computed(() => colorForHue(_previewHue.value));
 
 /// Saved tag hues, in degrees. A missing tag uses [defaultHueForTag].
-final PersistedSignal<Map<String, double>> tagHues = _TagHues();
+final tagHues = TagHues();
 
 /// Hue a slider is dragging. Saved to [tagHues] when the pointer lifts.
 final _tagHuePreview = signal<({String tag, double hue})?>(null);
@@ -72,7 +72,7 @@ double hueForTag(String tag) {
   if (preview != null && preview.tag == tag) {
     return ui.clampDouble(preview.hue, 0, 360);
   }
-  return ui.clampDouble(tagHues.value[tag] ?? defaultHueForTag(tag), 0, 360);
+  return ui.clampDouble(tagHues[tag] ?? defaultHueForTag(tag), 0, 360);
 }
 
 /// Hue for a tag nobody has recolored.
@@ -90,8 +90,14 @@ double defaultHueForTag(String tag) {
   return ((hash * 289) % 360).toDouble();
 }
 
-class _TagHues extends PersistedSignal<Map<String, double>> {
-  new() : super(const <String, double>{}, key: 'tagHues', store: SignalsKeyValueStore.defaultStore);
+class TagHues extends MapSignal<String, double> with PersistedSignalMixin<Map<String, double>> {
+  new() : super(<String, double>{});
+
+  @override
+  final String key = 'tagHues';
+
+  @override
+  final SignalsKeyValueStore store = SignalsKeyValueStore.defaultStore;
 
   @override
   Map<String, double> decode(String value) {
@@ -99,19 +105,25 @@ class _TagHues extends PersistedSignal<Map<String, double>> {
     try {
       decoded = jsonDecode(value);
     } on FormatException {
-      return const {};
+      return {};
     }
-    if (decoded is! Map) return const {};
-    final hues = <String, double>{};
-    for (final MapEntry(:key, :value) in Map<Object?, Object?>.from(decoded).entries) {
-      if (key is! String || value is! num || !value.isFinite) continue;
-      hues[key] = value.toDouble();
-    }
-    return hues;
+    if (decoded is! Map) return {};
+
+    return <String, double>{
+      for (final entry in decoded.entries)
+        if (entry case MapEntry(:final String key, :final num value) when value.isFinite)
+          key: value.toDouble(),
+    };
   }
 
   @override
-  String encode(Map<String, double> value) => jsonEncode(value);
+  bool set(Map<String, double> val, {bool force = false}) {
+    final changed = super.set(val, force: force);
+
+    // Map writes notify through set, so persist here once the stored value is loaded.
+    if (loaded && changed) save(val).ignore();
+    return changed;
+  }
 }
 
 final unitNames = PersistedEnumSignal<UnitNames>(.full, 'unitNames', UnitNames.values);
@@ -182,7 +194,7 @@ void debugResetSettings() {
   colorSchemeHue.value = defaultHue;
   _previewHue.value = colorSchemeHue.value;
   _tagHuePreview.value = null;
-  tagHues.value = const {};
+  tagHues.clear();
   unitNames.value = .full;
   halfTablespoons.value = .tablespoons;
   eighthCup.value = .cup;

@@ -247,7 +247,7 @@ class _TagHueSlider extends SignalWidget {
   }
 
   static void _release(String tag, double hue) {
-    tagHues.value = {...tagHues.peek(), tag: hue};
+    tagHues[tag] = hue;
     _tagHuePreview.value = null;
   }
 
