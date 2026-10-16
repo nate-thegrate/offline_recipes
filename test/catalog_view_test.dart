@@ -415,6 +415,14 @@ void main() {
     await tester.scrollUntilVisible(find.text('Directions'), 400, scrollable: _detailScroll);
     await tester.pumpAndSettle();
     expect(find.text('Directions'), findsWidgets);
+    final position = tester.state<ScrollableState>(_detailScroll).position;
+    expect(position.maxScrollExtent, greaterThan(0));
+    position.jumpTo(position.maxScrollExtent);
+    await tester.pump();
+    expect(find.text(recipe.name.titleCase), findsOneWidget);
+    expect(find.byKey(const ValueKey('edit-recipe')), findsOneWidget);
+    expect(find.byKey(const ValueKey('delete-recipe')), findsOneWidget);
+    expect(find.byKey(const ValueKey('open-settings')), findsNothing);
     expect(find.byKey(const ValueKey('recipe-list')), findsNothing);
     expect(find.byTooltip('Back'), findsOneWidget);
     expect(tester.takeException(), isNull);

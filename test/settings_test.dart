@@ -169,7 +169,7 @@ void main() {
   });
 
   testWidgets('unit names rewrite a recipe line and keep its check', (tester) async {
-    await _size(tester, const Size(CatalogPage.wideLayoutWidth - 1, 800));
+    await _size(tester, const Size(CatalogPage.wideLayoutWidth, 800));
     await tester.pumpWidget(const App());
     await tester.pumpAndSettle();
 

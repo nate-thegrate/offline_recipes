@@ -38,8 +38,11 @@ class CatalogPage extends StatelessWidget {
     navigator.push(
       MaterialPageRoute<void>(
         builder: (context) => Scaffold(
-          appBar: AppBar(actions: const [SettingsButton()]),
-          body: RecipeDetail(recipe: recipe, showTitle: true, popWhenDeleted: true),
+          appBar: AppBar(
+            title: Text(recipe.name.titleCase),
+            actions: [_RecipeActions(recipe: recipe, popWhenDeleted: true)],
+          ),
+          body: RecipeDetail(recipe: recipe, showTitle: false),
         ),
       ),
     );
@@ -53,20 +56,24 @@ class CatalogPage extends StatelessWidget {
     navigator.push(MaterialPageRoute<void>(builder: (context) => const IngredientListPage()));
   }
 
+  static void _openSettings() {
+    navigator.push(MaterialPageRoute<void>(builder: (context) => const SettingsPage()));
+  }
+
   static List<PopupMenuEntry<void>> _popupItems(BuildContext _) => const [
     PopupMenuItem(
       key: ValueKey('new-recipe'),
-      onTap: CatalogPage._newRecipe,
+      onTap: _newRecipe,
       child: _CatalogMenuLabel(Icons.add, 'New recipe'),
     ),
     PopupMenuItem(
       key: ValueKey('open-ingredients'),
-      onTap: CatalogPage._openIngredients,
+      onTap: _openIngredients,
       child: _CatalogMenuLabel(Icons.kitchen_outlined, 'Ingredients'),
     ),
     PopupMenuItem(
       key: ValueKey('open-settings'),
-      onTap: SettingsButton._open,
+      onTap: _openSettings,
       child: _CatalogMenuLabel(Icons.settings_outlined, 'Settings'),
     ),
   ];
@@ -104,7 +111,12 @@ class CatalogPage extends StatelessWidget {
                   onPressed: _openIngredients,
                   icon: Icon(Icons.kitchen_outlined),
                 ),
-                SettingsButton(),
+                IconButton(
+                  key: ValueKey('open-settings'),
+                  tooltip: 'Settings',
+                  onPressed: _openSettings,
+                  icon: Icon(Icons.settings_outlined),
+                ),
               ],
             ],
             titleSpacing: 8,
@@ -205,24 +217,6 @@ class _RecipeTileState extends State<_RecipeTile> {
   }
 }
 
-class SettingsButton extends StatelessWidget {
-  const new({super.key});
-
-  static void _open() {
-    navigator.push(MaterialPageRoute<void>(builder: (context) => const SettingsPage()));
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return const IconButton(
-      key: ValueKey('open-settings'),
-      tooltip: 'Settings',
-      onPressed: _open,
-      icon: Icon(Icons.settings_outlined),
-    );
-  }
-}
-
 class RecipeSearchField extends StatelessWidget {
   const new({super.key});
 
@@ -308,7 +302,7 @@ class SelectedRecipe extends SignalWidget {
 }
 
 class _RecipeActions extends SignalWidget {
-  const new({required this.recipe, required this.popWhenDeleted});
+  const new({required this.recipe, this.popWhenDeleted = false});
 
   final Recipe recipe;
   final bool popWhenDeleted;
@@ -351,16 +345,10 @@ class _RecipeActions extends SignalWidget {
 }
 
 class RecipeDetail extends SignalWidget {
-  const new({
-    required this.recipe,
-    required this.showTitle,
-    this.popWhenDeleted = false,
-    super.key,
-  });
+  const new({required this.recipe, required this.showTitle, super.key});
 
   final Recipe recipe;
   final bool showTitle;
-  final bool popWhenDeleted;
 
   @override
   Widget build(BuildContext context) {
@@ -374,7 +362,7 @@ class RecipeDetail extends SignalWidget {
           crossAxisAlignment: .start,
           children: [
             Expanded(child: Text(recipe.name.titleCase, style: textTheme.headlineMedium)),
-            _RecipeActions(recipe: recipe, popWhenDeleted: popWhenDeleted),
+            _RecipeActions(recipe: recipe),
           ],
         ),
         const SizedBox(height: 8),

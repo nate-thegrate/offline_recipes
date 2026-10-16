@@ -268,25 +268,18 @@ void main() {
     await tester.tap(tile);
     await tester.pumpAndSettle();
     expect(find.text('Stir.'), findsOneWidget);
-    final detail = find.byKey(const ValueKey('recipe-detail'));
-    expect(find.descendant(of: detail, matching: find.text('Saved Toast')), findsOneWidget);
-    expect(
-      find.descendant(of: detail, matching: find.byKey(const ValueKey('edit-recipe'))),
-      findsOneWidget,
-    );
-    expect(
-      find.descendant(of: detail, matching: find.byKey(const ValueKey('delete-recipe'))),
-      findsOneWidget,
-    );
     final recipeBar = find.byType(AppBar);
-    expect(
-      find.descendant(of: recipeBar, matching: find.byKey(const ValueKey('open-settings'))),
-      findsOneWidget,
-    );
+    expect(find.text('Saved Toast'), findsOneWidget);
+    expect(find.descendant(of: recipeBar, matching: find.text('Saved Toast')), findsOneWidget);
     expect(
       find.descendant(of: recipeBar, matching: find.byKey(const ValueKey('edit-recipe'))),
-      findsNothing,
+      findsOneWidget,
     );
+    expect(
+      find.descendant(of: recipeBar, matching: find.byKey(const ValueKey('delete-recipe'))),
+      findsOneWidget,
+    );
+    expect(find.byKey(const ValueKey('open-settings')), findsNothing);
 
     await tester.tap(find.byKey(const ValueKey('edit-recipe')));
     await tester.pumpAndSettle();
