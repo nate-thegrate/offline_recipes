@@ -155,18 +155,21 @@ class RecipeBrowser extends StatelessWidget {
               if (matching.isEmpty) {
                 return const Center(child: Text('No recipes match.'));
               }
-              return ListView.separated(
-                key: const ValueKey('recipe-list'),
-                itemCount: matching.length,
-                separatorBuilder: (context, index) => const Divider(height: 1),
-                itemBuilder: (context, index) {
-                  final recipe = matching[index];
-                  return _RecipeTile(
-                    key: ValueKey('recipe-${recipe.name}'),
-                    recipe: recipe,
-                    onSelect: onSelect,
-                  );
-                },
+              return Material(
+                type: .transparency,
+                child: ListView.separated(
+                  key: const ValueKey('recipe-list'),
+                  itemCount: matching.length,
+                  separatorBuilder: (context, index) => const Divider(height: 1),
+                  itemBuilder: (context, index) {
+                    final recipe = matching[index];
+                    return _RecipeTile(
+                      key: ValueKey('recipe-${recipe.name}'),
+                      recipe: recipe,
+                      onSelect: onSelect,
+                    );
+                  },
+                ),
               );
             },
           ),
@@ -194,6 +197,7 @@ class _RecipeTileState extends State<_RecipeTile> {
   @override
   Widget build(BuildContext context) {
     final recipe = widget.recipe;
+    final ThemeData(:textTheme, :colorScheme) = Theme.of(context);
     final price = switch (listPrice.value) {
       .hidden => null,
       .serving => recipe.servingPrice,
@@ -201,14 +205,17 @@ class _RecipeTileState extends State<_RecipeTile> {
     };
     Widget? trailing;
     if (recipe.isPriced && price != null) {
-      trailing = Text(price.toString(), style: TextTheme.of(context).titleMedium);
+      trailing = Text(price.toString(), style: textTheme.titleMedium);
     }
     final subtitle = recipe.subtitleOmitting(selectedTags.value);
 
     return ListTile(
       selected: _highlighted.value,
-      title: Text(recipe.name.titleCase),
-      subtitle: subtitle.isEmpty ? null : Text(subtitle),
+      selectedTileColor: colorScheme.secondaryContainer,
+      title: Text(recipe.name.titleCase, style: TextStyle(color: colorScheme.onSurface)),
+      subtitle: subtitle.isEmpty
+          ? null
+          : Text(subtitle, style: TextStyle(color: colorScheme.onSurfaceVariant)),
       trailing: trailing,
       onTap: () {
         selected.value = recipe;
@@ -297,6 +304,10 @@ class _TagChip extends SignalWidget {
         child: FilterChip(
           key: ValueKey('tag-$option'),
           label: Text(option.titleCase),
+          side: BorderSide(
+            color: colorScheme.onPrimaryContainer.withValues(alpha: selected ? 0 : 0.04),
+            width: 1.5,
+          ),
           selected: selected,
           showCheckmark: false,
           onSelected: (_) => _selectTag(option),
@@ -419,16 +430,26 @@ class RecipeDetail extends SignalWidget {
       ],
     ];
 
-    return Theme(
-      key: const ValueKey('recipe-detail'),
-      data: theme.copyWith(
-        splashFactory: NoSplash.splashFactory,
-        highlightColor: Colors.transparent,
-      ),
-      child: ListView(
-        key: ValueKey(recipe.name),
-        padding: const .fromLTRB(20, 16, 20, 32),
-        children: children,
+    final background = switch (theme.brightness) {
+      .light => Colors.white,
+      .dark => Colors.black,
+    };
+    return ColoredBox(
+      color: background.withValues(alpha: 0.5),
+      child: Material(
+        type: .transparency,
+        child: Theme(
+          key: const ValueKey('recipe-detail'),
+          data: theme.copyWith(
+            splashFactory: NoSplash.splashFactory,
+            highlightColor: Colors.transparent,
+          ),
+          child: ListView(
+            key: ValueKey(recipe.name),
+            padding: const .fromLTRB(20, 16, 20, 32),
+            children: children,
+          ),
+        ),
       ),
     );
   }

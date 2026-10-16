@@ -1,3 +1,4 @@
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
@@ -343,13 +344,49 @@ void main() {
     if (listed.length > 1) {
       final second = listed[1];
       expect(_tile(tester, second.name).selected, isFalse);
+      _expectRowHighlight(tester, selected: first.name, plain: second.name);
 
       await tester.tap(find.byKey(ValueKey('recipe-${second.name}')));
       await tester.pump();
 
       expect(_tile(tester, first.name).selected, isFalse);
       expect(_tile(tester, second.name).selected, isTrue);
+      _expectRowHighlight(tester, selected: second.name, plain: first.name);
+
+      themeAnimationDuration = Duration.zero;
+      themeMode.value = .dark;
+      await tester.pump();
+      _expectRowHighlight(tester, selected: second.name, plain: first.name);
     }
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('a scrolled highlight stays inside the list', (tester) async {
+    await tester.pumpWidget(const RepaintBoundary(child: App()));
+    await tester.pumpAndSettle();
+
+    final recipe = recipes.first;
+    await tester.tap(find.byKey(ValueKey('recipe-${recipe.name}')));
+    await tester.pump();
+
+    final position = tester.state<ScrollableState>(_listScroll).position;
+    const overlap = 24.0;
+    position.jumpTo(overlap);
+    await tester.pump();
+
+    final listBox = tester.renderObject<RenderBox>(find.byKey(const ValueKey('recipe-list')));
+    final tileBox = tester.renderObject<RenderBox>(find.byKey(ValueKey('recipe-${recipe.name}')));
+    final listTopLeft = listBox.localToGlobal(Offset.zero);
+    final tileTopLeft = tileBox.localToGlobal(Offset.zero);
+    expect(tileTopLeft.dy, lessThan(listTopLeft.dy));
+    expect(tileTopLeft.dy + tileBox.size.height, greaterThan(listTopLeft.dy + overlap));
+
+    final scheme = Theme.of(tester.element(find.byKey(ValueKey('recipe-${recipe.name}'))))
+        .colorScheme;
+    final above = await _pixelAt(tester, listTopLeft + const Offset(4, -4));
+    final inside = await _pixelAt(tester, listTopLeft + const Offset(4, 8));
+    expect(above.toARGB32(), isNot(scheme.secondaryContainer.toARGB32()));
+    expect(inside.toARGB32(), scheme.secondaryContainer.toARGB32());
     expect(tester.takeException(), isNull);
   });
 
@@ -584,6 +621,51 @@ ListTile _tile(WidgetTester tester, String name) {
   return tester.widget<ListTile>(
     find.descendant(of: find.byKey(ValueKey('recipe-$name')), matching: find.byType(ListTile)),
   );
+}
+
+void _expectRowHighlight(WidgetTester tester, {required String selected, required String plain}) {
+  final scheme = Theme.of(tester.element(find.byKey(ValueKey('recipe-$selected')))).colorScheme;
+  expect(_tileBackground(tester, selected), scheme.secondaryContainer);
+  expect(_tileBackground(tester, plain), Colors.transparent);
+  expect(_renderedTextColor(tester, selected, selected.titleCase), scheme.onSurface);
+  expect(_renderedTextColor(tester, plain, plain.titleCase), scheme.onSurface);
+
+  final selectedSubtitle = _tileSubtitle(tester, selected);
+  final plainSubtitle = _tileSubtitle(tester, plain);
+  expect(selectedSubtitle, isNotNull);
+  expect(plainSubtitle, isNotNull);
+  expect(_renderedTextColor(tester, selected, selectedSubtitle!), scheme.onSurfaceVariant);
+  expect(_renderedTextColor(tester, plain, plainSubtitle!), scheme.onSurfaceVariant);
+}
+
+Future<Color> _pixelAt(WidgetTester tester, Offset global) async {
+  final boundary = tester.renderObject<RenderRepaintBoundary>(find.byType(RepaintBoundary).first);
+  final Offset(:dx, :dy) = boundary.globalToLocal(global);
+  final data = await tester.runAsync(() async {
+    final image = await boundary.toImage();
+    return image.toByteData();
+  });
+  final bytes = data!.buffer.asUint8List();
+  final x = dx.round();
+  final y = dy.round();
+  final pixel = (y * boundary.size.width.round() + x) * 4;
+  return Color.fromARGB(bytes[pixel + 3], bytes[pixel], bytes[pixel + 1], bytes[pixel + 2]);
+}
+
+Color _tileBackground(WidgetTester tester, String name) {
+  final ink = tester.widget<Ink>(
+    find.descendant(of: find.byKey(ValueKey('recipe-$name')), matching: find.byType(Ink)),
+  );
+  return (ink.decoration! as ShapeDecoration).color!;
+}
+
+Color _renderedTextColor(WidgetTester tester, String name, String text) {
+  final finder = find.descendant(
+    of: find.byKey(ValueKey('recipe-$name')),
+    matching: find.text(text),
+  );
+  final style = tester.widget<Text>(finder).style;
+  return DefaultTextStyle.of(tester.element(finder)).style.merge(style).color!;
 }
 
 String? _tileSubtitle(WidgetTester tester, String name) {
