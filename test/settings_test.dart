@@ -419,46 +419,95 @@ void main() {
     await tester.pumpAndSettle();
 
     await _openSettings(tester);
+    expect(
+      tester
+          .widget<SegmentedButton<HalfTablespoons>>(
+            find.byKey(const ValueKey('half-tablespoons')),
+          )
+          .selected,
+      {HalfTablespoons.tablespoons},
+    );
+    expect(
+      tester.widget<SegmentedButton<EighthCup>>(find.byKey(const ValueKey('eighth-cup'))).selected,
+      {EighthCup.cup},
+    );
+    expect(
+      tester
+          .widget<SegmentedButton<SmallestAmount>>(find.byKey(const ValueKey('smallest-amount')))
+          .selected,
+      {SmallestAmount.eighth},
+    );
     await _choose(tester, 'theme-mode', 'Dark');
     await tester.tap(find.byKey(const ValueKey('color-hue')));
     await tester.pumpAndSettle();
     final hue = colorSchemeHue.value;
     expect(hue, closeTo(180, 1));
     await _choose(tester, 'unit-names', 'Tiny');
+    await _choose(tester, 'half-tablespoons', 'Teaspoons');
+    await _choose(tester, 'eighth-cup', '2 tablespoons');
+    await _choose(tester, 'smallest-amount', '1/4 tsp');
     await _choose(tester, 'list-price', 'Hidden');
     await _choose(tester, 'text-size', 'Large');
-    await tester.scrollUntilVisible(
-      find.byKey(const ValueKey('show-nutrition')),
-      200,
-      scrollable: _settingsScroll,
-    );
-    await tester.tap(find.byKey(const ValueKey('show-nutrition')));
+    final nutrition = find.byKey(const ValueKey('show-nutrition'));
+    await tester.scrollUntilVisible(nutrition, 200, scrollable: _settingsScroll);
+    await tester.ensureVisible(nutrition);
+    await tester.pumpAndSettle();
+    await tester.tap(nutrition);
     await tester.pumpAndSettle();
 
     debugResetSettings();
     await loadSettings();
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.byKey(const ValueKey('theme-mode')),
+      -400,
+      scrollable: _settingsScroll,
+    );
     await tester.pumpAndSettle();
 
     final scheme = Theme.of(tester.element(find.byType(SettingsPage))).colorScheme;
     expect(tester.widget<MaterialApp>(find.byType(MaterialApp)).themeMode, ThemeMode.dark);
     expect(scheme.brightness, Brightness.dark);
     expect(colorSchemeHue.value, hue);
+    await tester.scrollUntilVisible(
+      find.byKey(const ValueKey('unit-names')),
+      400,
+      scrollable: _settingsScroll,
+    );
     expect(
       tester.widget<SegmentedButton<UnitNames>>(find.byKey(const ValueKey('unit-names'))).selected,
       {UnitNames.superShort},
     );
     expect(
-      tester.widget<SegmentedButton<ListPrice>>(find.byKey(const ValueKey('list-price'))).selected,
-      {ListPrice.hidden},
-    );
-    expect(
       tester.widget<SegmentedButton<TextSize>>(find.byKey(const ValueKey('text-size'))).selected,
       {TextSize.large},
     );
+    await tester.scrollUntilVisible(nutrition, 400, scrollable: _settingsScroll);
+    await tester.ensureVisible(nutrition);
+    await tester.pumpAndSettle();
     expect(
-      tester.widget<SwitchListTile>(find.byKey(const ValueKey('show-nutrition'))).value,
-      isFalse,
+      tester
+          .widget<SegmentedButton<HalfTablespoons>>(
+            find.byKey(const ValueKey('half-tablespoons')),
+          )
+          .selected,
+      {HalfTablespoons.teaspoons},
     );
+    expect(
+      tester.widget<SegmentedButton<EighthCup>>(find.byKey(const ValueKey('eighth-cup'))).selected,
+      {EighthCup.tablespoons},
+    );
+    expect(
+      tester
+          .widget<SegmentedButton<SmallestAmount>>(find.byKey(const ValueKey('smallest-amount')))
+          .selected,
+      {SmallestAmount.quarter},
+    );
+    expect(
+      tester.widget<SegmentedButton<ListPrice>>(find.byKey(const ValueKey('list-price'))).selected,
+      {ListPrice.hidden},
+    );
+    expect(tester.widget<SwitchListTile>(nutrition).value, isFalse);
     expect(tester.takeException(), isNull);
   });
 }

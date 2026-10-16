@@ -13,6 +13,29 @@ part 'src/page.dart';
 
 enum ListPrice { serving, recipe, hidden }
 
+/// A half tablespoon, such as 1/2 or 1 1/2.
+///
+/// Any other fraction of a tablespoon is shown in teaspoons.
+enum HalfTablespoons {
+  /// Stays in tablespoons. 1/2 tablespoon stays 1/2 tablespoon.
+  tablespoons,
+
+  /// Shown in teaspoons. 1/2 tablespoon is 1 1/2 teaspoons.
+  teaspoons,
+}
+
+/// An eighth of a cup.
+enum EighthCup {
+  /// Shown as 1/8 cup.
+  cup,
+
+  /// Shown as 2 tablespoons.
+  tablespoons,
+}
+
+/// Smallest teaspoon to display: a sixteenth, an eighth, or a quarter.
+enum SmallestAmount { sixteenth, eighth, quarter }
+
 enum TextSize {
   small(0.85),
   normal(1),
@@ -68,8 +91,7 @@ double defaultHueForTag(String tag) {
 }
 
 class _TagHues extends PersistedSignal<Map<String, double>> {
-  new()
-    : super(const <String, double>{}, key: 'tagHues', store: SignalsKeyValueStore.defaultStore);
+  new() : super(const <String, double>{}, key: 'tagHues', store: SignalsKeyValueStore.defaultStore);
 
   @override
   Map<String, double> decode(String value) {
@@ -93,6 +115,17 @@ class _TagHues extends PersistedSignal<Map<String, double>> {
 }
 
 final unitNames = PersistedEnumSignal<UnitNames>(.full, 'unitNames', UnitNames.values);
+final halfTablespoons = PersistedEnumSignal<HalfTablespoons>(
+  .tablespoons,
+  'halfTablespoons',
+  HalfTablespoons.values,
+);
+final eighthCup = PersistedEnumSignal<EighthCup>(.cup, 'eighthCup', EighthCup.values);
+final smallestAmount = PersistedEnumSignal<SmallestAmount>(
+  .eighth,
+  'smallestAmount',
+  SmallestAmount.values,
+);
 final listPrice = PersistedEnumSignal<ListPrice>(.serving, 'listPrice', ListPrice.values);
 final textSize = PersistedEnumSignal<TextSize>(.normal, 'textSize', TextSize.values);
 final showNutrition = PersistedBoolSignal(true, 'showNutrition');
@@ -132,10 +165,13 @@ Future<void> loadSettings() async {
     colorSchemeHue.init(),
     tagHues.init(),
     unitNames.init(),
+    halfTablespoons.init(),
+    eighthCup.init(),
+    smallestAmount.init(),
     listPrice.init(),
     textSize.init(),
-    showNutrition.init(),
   ).wait;
+  await showNutrition.init();
 }
 
 @visibleForTesting
@@ -148,6 +184,9 @@ void debugResetSettings() {
   _tagHuePreview.value = null;
   tagHues.value = const {};
   unitNames.value = .full;
+  halfTablespoons.value = .tablespoons;
+  eighthCup.value = .cup;
+  smallestAmount.value = .eighth;
   listPrice.value = .serving;
   textSize.value = .normal;
   showNutrition.value = true;

@@ -48,6 +48,37 @@ class SettingsPage extends StatelessWidget {
                   ButtonSegment(value: .superShort, label: Text('Tiny')),
                 ],
               ),
+              _Choice<HalfTablespoons>(
+                title: 'Half-tablespoons',
+                subtitle: '1/2 tablespoon · 1 1/2 teaspoons.',
+                controlKey: 'half-tablespoons',
+                setting: halfTablespoons,
+                segments: const [
+                  ButtonSegment(value: .tablespoons, label: Text('Tablespoons')),
+                  ButtonSegment(value: .teaspoons, label: Text('Teaspoons')),
+                ],
+              ),
+              _Choice<EighthCup>(
+                title: 'Eighth of a cup',
+                subtitle: '1/8 cup · 2 tablespoons',
+                controlKey: 'eighth-cup',
+                setting: eighthCup,
+                segments: const [
+                  ButtonSegment(value: .cup, label: Text('1/8 cup')),
+                  ButtonSegment(value: .tablespoons, label: Text('2 tablespoons')),
+                ],
+              ),
+              _Choice<SmallestAmount>(
+                title: 'Smallest amount',
+                subtitle: 'The smallest teaspoon to show.',
+                controlKey: 'smallest-amount',
+                setting: smallestAmount,
+                segments: const [
+                  ButtonSegment(value: .sixteenth, label: Text('1/16 tsp')),
+                  ButtonSegment(value: .eighth, label: Text('1/8 tsp')),
+                  ButtonSegment(value: .quarter, label: Text('1/4 tsp')),
+                ],
+              ),
               _Choice<ListPrice>(
                 title: 'Recipe list',
                 subtitle: 'Price beside a priced recipe.',

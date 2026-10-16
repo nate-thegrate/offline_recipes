@@ -21,6 +21,9 @@ void main() {
       'colorSchemeHue': '200',
       'tagHues': jsonEncode({tag: 15}),
       'unitNames': 'superShort',
+      'halfTablespoons': 'teaspoons',
+      'eighthCup': 'tablespoons',
+      'smallestAmount': 'sixteenth',
       'listPrice': 'hidden',
       'textSize': 'large',
       'showNutrition': 'false',
@@ -69,22 +72,40 @@ void main() {
       {UnitNames.superShort},
     );
     expect(
-      tester.widget<SegmentedButton<ListPrice>>(find.byKey(const ValueKey('list-price'))).selected,
-      {ListPrice.hidden},
-    );
-    expect(
       tester.widget<SegmentedButton<TextSize>>(find.byKey(const ValueKey('text-size'))).selected,
       {TextSize.large},
     );
-    await tester.scrollUntilVisible(
-      find.byKey(const ValueKey('show-nutrition')),
-      200,
-      scrollable: find.descendant(of: find.byType(SettingsPage), matching: find.byType(Scrollable)),
+    final nutrition = find.byKey(const ValueKey('show-nutrition'));
+    final settingsScroll = find.descendant(
+      of: find.byType(SettingsPage),
+      matching: find.byType(Scrollable),
+    );
+    await tester.scrollUntilVisible(nutrition, 200, scrollable: settingsScroll);
+    await tester.ensureVisible(nutrition);
+    await tester.pumpAndSettle();
+    expect(
+      tester
+          .widget<SegmentedButton<HalfTablespoons>>(
+            find.byKey(const ValueKey('half-tablespoons')),
+          )
+          .selected,
+      {HalfTablespoons.teaspoons},
     );
     expect(
-      tester.widget<SwitchListTile>(find.byKey(const ValueKey('show-nutrition'))).value,
-      isFalse,
+      tester.widget<SegmentedButton<EighthCup>>(find.byKey(const ValueKey('eighth-cup'))).selected,
+      {EighthCup.tablespoons},
     );
+    expect(
+      tester
+          .widget<SegmentedButton<SmallestAmount>>(find.byKey(const ValueKey('smallest-amount')))
+          .selected,
+      {SmallestAmount.sixteenth},
+    );
+    expect(
+      tester.widget<SegmentedButton<ListPrice>>(find.byKey(const ValueKey('list-price'))).selected,
+      {ListPrice.hidden},
+    );
+    expect(tester.widget<SwitchListTile>(nutrition).value, isFalse);
     expect(tester.takeException(), isNull);
   });
 }
