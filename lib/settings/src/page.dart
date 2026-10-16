@@ -24,7 +24,8 @@ class SettingsPage extends StatelessWidget {
                   ButtonSegment(value: .dark, label: Text('Dark')),
                 ],
               ),
-              const _HueSlider(),
+              const _ColorSchemeSlider(),
+              const _TagColors(),
               _Choice<TextSize>(
                 title: 'Text size',
                 subtitle: 'Scales recipe text. The nutrition label stays the same size.',
@@ -152,7 +153,7 @@ class _Section extends StatelessWidget {
   }
 }
 
-class _HueSlider extends SignalWidget {
+class _ColorSchemeSlider extends SignalWidget {
   const new();
 
   static void _preview(double hue) {
@@ -171,31 +172,116 @@ class _HueSlider extends SignalWidget {
   @override
   Widget build(BuildContext context) {
     final hue = _previewHue.value;
-    final scheme = ColorScheme.of(context);
-    final seed = colorForHue(hue);
     return _Section(
       title: 'Color',
       trailing: '${hue.round()}°',
-      child: SliderTheme(
-        data: SliderTheme.of(context).copyWith(
-          trackHeight: 12,
-          // A transparent track color collapses the track rect.
-          activeTrackColor: seed,
-          inactiveTrackColor: seed,
-          thumbColor: seed,
-          overlayColor: seed.withValues(alpha: 0.16),
-          trackShape: _HueTrackShape(scheme.outlineVariant),
-          thumbShape: const _HueThumbShape(),
+      child: _HueSlider(
+        valueKey: const ValueKey('color-hue'),
+        hue: hue,
+        onChanged: _preview,
+        onChangeEnd: _release,
+      ),
+    );
+  }
+}
+
+class _TagColors extends SignalWidget {
+  const new();
+
+  @override
+  Widget build(BuildContext context) {
+    final names = tags;
+    if (names.isEmpty) return const SizedBox.shrink();
+    return _Section(
+      title: 'Tag colors',
+      child: Column(
+        children: [
+          for (final tag in names) ...[
+            if (tag != names.first) const SizedBox(height: 12),
+            _TagHueSlider(tag: tag),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _TagHueSlider extends SignalWidget {
+  const new({required this.tag});
+
+  final String tag;
+
+  static void _preview(String tag, double hue) {
+    _tagHuePreview.value = (tag: tag, hue: hue);
+  }
+
+  static void _release(String tag, double hue) {
+    tagHues.value = {...tagHues.peek(), tag: hue};
+    _tagHuePreview.value = null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final hue = hueForTag(tag);
+    final ThemeData(:colorScheme, :textTheme) = Theme.of(context);
+    return Column(
+      crossAxisAlignment: .stretch,
+      children: [
+        Row(
+          children: [
+            Expanded(child: Text(tag.titleCase, style: textTheme.titleSmall)),
+            Text(
+              '${hue.round()}°',
+              style: textTheme.titleSmall?.copyWith(color: colorScheme.onSurfaceVariant),
+            ),
+          ],
         ),
-        child: Slider(
-          key: const ValueKey('color-hue'),
-          padding: .zero,
-          max: 360,
-          value: hue,
-          semanticFormatterCallback: (value) => '${value.round()} degrees',
-          onChanged: _preview,
-          onChangeEnd: _release,
+        _HueSlider(
+          valueKey: ValueKey('tag-hue-$tag'),
+          hue: hue,
+          onChanged: (value) => _preview(tag, value),
+          onChangeEnd: (value) => _release(tag, value),
         ),
+      ],
+    );
+  }
+}
+
+class _HueSlider extends StatelessWidget {
+  const new({
+    required this.valueKey,
+    required this.hue,
+    required this.onChanged,
+    required this.onChangeEnd,
+  });
+
+  final Key valueKey;
+  final double hue;
+  final ValueChanged<double> onChanged;
+  final ValueChanged<double> onChangeEnd;
+
+  @override
+  Widget build(BuildContext context) {
+    final seed = colorForHue(hue);
+    return SliderTheme(
+      data: SliderTheme.of(context).copyWith(
+        trackHeight: 12,
+        // A transparent track color collapses the track rect.
+        activeTrackColor: seed,
+        inactiveTrackColor: seed,
+        thumbColor: seed,
+        overlayColor: seed.withValues(alpha: 0.16),
+        trackShape: _HueTrackShape(ColorScheme.of(context).outlineVariant),
+        thumbShape: const _HueThumbShape(),
+      ),
+      child: Slider(
+        key: valueKey,
+        padding: .zero,
+        max: 360,
+        value: hue,
+        semanticFormatterCallback: (value) => '${value.round()} degrees',
+        onChanged: onChanged,
+        onChangeEnd: onChangeEnd,
       ),
     );
   }

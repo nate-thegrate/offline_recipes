@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:offline_recipes/catalog/catalog.dart';
@@ -12,9 +14,12 @@ void main() {
   setUpAll(loadCatalog);
 
   testWidgets('stored settings are applied at startup', (tester) async {
+    final tag = tags.first;
+    final other = tags[1];
     SharedPreferences.setMockInitialValues({
       'themeMode': 'dark',
       'colorSchemeHue': '200',
+      'tagHues': jsonEncode({tag: 15}),
       'unitNames': 'superShort',
       'listPrice': 'hidden',
       'textSize': 'large',
@@ -22,6 +27,8 @@ void main() {
     });
     await loadSettings();
     expect(colorSchemeHue.value, 200);
+    expect(hueForTag(tag), 15);
+    expect(tagHues.value.containsKey(other), isFalse);
     expect(colorSchemeSeed.value.toARGB32(), colorForHue(200).toARGB32());
 
     await tester.binding.setSurfaceSize(const Size(400, 1400));
@@ -45,6 +52,14 @@ void main() {
     await tester.tap(settings.hitTestable());
     await tester.pumpAndSettle();
     expect(tester.widget<Slider>(find.byKey(const ValueKey('color-hue'))).value, 200);
+    final tagSlider = find.byKey(ValueKey('tag-hue-$tag'));
+    await tester.scrollUntilVisible(
+      tagSlider,
+      200,
+      scrollable: find.descendant(of: find.byType(SettingsPage), matching: find.byType(Scrollable)),
+    );
+    expect(tester.widget<Slider>(tagSlider).value, 15);
+    expect(find.byKey(ValueKey('tag-hue-$other')), findsOneWidget);
     expect(
       tester.widget<SegmentedButton<ThemeMode>>(find.byKey(const ValueKey('theme-mode'))).selected,
       {ThemeMode.dark},

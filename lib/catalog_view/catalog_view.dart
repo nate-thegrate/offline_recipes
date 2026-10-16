@@ -203,11 +203,12 @@ class _RecipeTileState extends State<_RecipeTile> {
     if (recipe.isPriced && price != null) {
       trailing = Text(price.toString(), style: TextTheme.of(context).titleMedium);
     }
+    final subtitle = recipe.subtitleOmitting(selectedTags.value);
 
     return ListTile(
       selected: _highlighted.value,
       title: Text(recipe.name.titleCase),
-      subtitle: Text(recipe.subtitle),
+      subtitle: subtitle.isEmpty ? null : Text(subtitle),
       trailing: trailing,
       onTap: () {
         selected.value = recipe;
@@ -267,7 +268,7 @@ class TagFilters extends SignalWidget {
   }
 }
 
-class _TagChip extends StatelessWidget {
+class _TagChip extends SignalWidget {
   const new({required this.option, required this.selected});
 
   final String option;
@@ -275,14 +276,31 @@ class _TagChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = ColorScheme.fromSeed(
+      seedColor: colorForHue(hueForTag(option)),
+      brightness: theme.brightness,
+      dynamicSchemeVariant: .vibrant,
+    );
+    Color ink(Color layer) => colorScheme.primary.withValues(alpha: layer.a);
     return GestureDetector(
       excludeFromSemantics: true,
       onLongPress: () => _toggleTag(option),
-      child: FilterChip(
-        key: ValueKey('tag-$option'),
-        label: Text(option.titleCase),
-        selected: selected,
-        onSelected: (_) => _selectTag(option),
+      child: Theme(
+        data: ThemeData(
+          colorScheme: colorScheme,
+          splashColor: ink(theme.splashColor),
+          highlightColor: ink(theme.highlightColor),
+          hoverColor: ink(theme.hoverColor),
+          focusColor: ink(theme.focusColor),
+        ),
+        child: FilterChip(
+          key: ValueKey('tag-$option'),
+          label: Text(option.titleCase),
+          selected: selected,
+          showCheckmark: false,
+          onSelected: (_) => _selectTag(option),
+        ),
       ),
     );
   }
@@ -517,9 +535,14 @@ class _Stat extends StatelessWidget {
 }
 
 extension RecipeSubtitle on Recipe {
-  String get subtitle {
+  String get subtitle => subtitleOmitting(const <String>{});
+
+  String subtitleOmitting(Set<String> omitted) {
     final Recipe(:tags, :servings, :servingsSpecified) = this;
-    final label = tags.map((tag) => tag.titleCase).join(', ');
+    final label = [
+      for (final tag in tags)
+        if (!omitted.contains(tag)) tag.titleCase,
+    ].join(', ');
     if (!servingsSpecified) return label;
     final noun = servings == 1 ? 'serving' : 'servings';
     final count = '${servings.plainNumber} $noun';

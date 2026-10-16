@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:offline_recipes/catalog/catalog.dart';
@@ -48,6 +50,40 @@ void main() {
       expect(hsv.value, 1, reason: 'hue $hue');
     }
     expect(colorForHue(0).toARGB32(), colorForHue(360).toARGB32());
+  });
+
+  test('a saved tag hue is kept and a bad entry is ignored', () async {
+    await loadSettings();
+    final kept = tags.first;
+    final dropped = tags[1];
+    final untouched = tags[2];
+    final keptDefault = hueForTag(kept);
+    final droppedHue = hueForTag(dropped);
+    final untouchedHue = hueForTag(untouched);
+    expect(tags.map(defaultHueForTag).toSet().length, greaterThan(1));
+    expect(defaultHueForTag(kept), inInclusiveRange(0, 359));
+    expect(defaultHueForTag('$kept '), isNot(keptDefault));
+
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setString(
+      'tagHues',
+      jsonEncode({kept: 12.5, dropped: 'nope', 'retired tag': 80, untouched: 400}),
+    );
+    await loadSettings();
+
+    expect(hueForTag(kept), 12.5);
+    expect(tagHues.value.containsKey(dropped), isFalse);
+    expect(hueForTag(dropped), droppedHue);
+    expect(hueForTag('retired tag'), 80);
+    expect(tagHues.value[untouched], 400);
+    expect(hueForTag(untouched), 360);
+    expect(hueForTag(untouched), isNot(untouchedHue));
+
+    await preferences.setString('tagHues', 'nope');
+    await loadSettings();
+    expect(tagHues.value, isEmpty);
+    expect(hueForTag(kept), keptDefault);
+    expect(hueForTag('retired tag'), defaultHueForTag('retired tag'));
   });
 
   testWidgets('settings leave the open recipe, search, and tag in place', (tester) async {
@@ -165,6 +201,85 @@ void main() {
     await gesture.up();
     await tester.pumpAndSettle();
     expect(colorSchemeHue.value, tester.widget<Slider>(slider).value);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('tag chips use each tag hue for the current brightness', (tester) async {
+    await loadSettings();
+    const hue = 200.0;
+    final colored = tags.first;
+    final plain = tags[1];
+    tagHues.value = {colored: hue};
+
+    await _size(tester, const Size(400, 800));
+    await tester.pumpWidget(const App());
+    await tester.pumpAndSettle();
+
+    Future<void> expectChips(Brightness brightness) async {
+      final coloredScheme = _vibrantScheme(hue, brightness);
+      final plainScheme = _vibrantScheme(hueForTag(plain), brightness);
+      expect(
+        Theme.of(tester.element(find.byKey(ValueKey('tag-$colored')))).colorScheme,
+        coloredScheme,
+      );
+      expect(Theme.of(tester.element(find.byKey(ValueKey('tag-$plain')))).colorScheme, plainScheme);
+      expect(coloredScheme.primary, isNot(plainScheme.primary));
+      expect(
+        tester.widget<FilterChip>(find.byKey(ValueKey('tag-$colored'))).showCheckmark,
+        isFalse,
+      );
+    }
+
+    expect(Theme.of(tester.element(find.byType(CatalogPage))).brightness, Brightness.light);
+    await expectChips(Brightness.light);
+
+    themeMode.value = .dark;
+    await tester.pumpAndSettle();
+    expect(Theme.of(tester.element(find.byType(CatalogPage))).brightness, Brightness.dark);
+    await expectChips(Brightness.dark);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('a tag hue drag colors that chip once the pointer lifts', (tester) async {
+    await loadSettings();
+    await _size(tester, const Size(400, 900));
+    await tester.pumpWidget(const App());
+    await tester.pumpAndSettle();
+    await _openSettings(tester);
+
+    final tag = tags.first;
+    final other = tags[1];
+    final otherHue = hueForTag(other);
+    final slider = find.byKey(ValueKey('tag-hue-$tag'));
+    await tester.scrollUntilVisible(slider, 200, scrollable: _settingsScroll);
+    final start = tester.widget<Slider>(slider).value;
+    final delta = start < 300 ? const Offset(90, 0) : const Offset(-90, 0);
+
+    final gesture = await tester.startGesture(tester.getCenter(slider));
+    await gesture.moveBy(delta);
+    await tester.pump();
+
+    final shown = tester.widget<Slider>(slider).value;
+    expect((shown - start).abs(), greaterThan(5));
+    expect(tagHues.value.containsKey(tag), isFalse);
+    expect(hueForTag(other), otherHue);
+
+    await gesture.up();
+    await tester.pumpAndSettle();
+    final saved = tester.widget<Slider>(slider).value;
+    expect(tagHues.value[tag], saved);
+
+    await _closeSettings(tester);
+    final brightness = Theme.of(tester.element(find.byType(CatalogPage))).brightness;
+    final scheme = _vibrantScheme(saved, brightness);
+    expect(Theme.of(tester.element(find.byKey(ValueKey('tag-$tag')))).colorScheme, scheme);
+
+    debugResetSettings();
+    await loadSettings();
+    await tester.pumpAndSettle();
+    expect(hueForTag(tag), saved);
+    expect(hueForTag(other), otherHue);
+    expect(Theme.of(tester.element(find.byKey(ValueKey('tag-$tag')))).colorScheme, scheme);
     expect(tester.takeException(), isNull);
   });
 
@@ -348,6 +463,14 @@ void main() {
   });
 }
 
+ColorScheme _vibrantScheme(double hue, Brightness brightness) {
+  return ColorScheme.fromSeed(
+    seedColor: colorForHue(hue),
+    brightness: brightness,
+    dynamicSchemeVariant: .vibrant,
+  );
+}
+
 Future<void> _size(WidgetTester tester, Size size) async {
   await tester.binding.setSurfaceSize(size);
   addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -373,6 +496,9 @@ Future<void> _closeSettings(WidgetTester tester) async {
 Future<void> _choose(WidgetTester tester, String group, String label) async {
   final finder = find.descendant(of: find.byKey(ValueKey(group)), matching: find.text(label));
   await tester.scrollUntilVisible(finder, 200, scrollable: _settingsScroll);
+  // A control can be hit-testable while its center is still past the bottom of the screen.
+  await tester.ensureVisible(finder);
+  await tester.pumpAndSettle();
   await tester.tap(finder);
   await tester.pumpAndSettle();
 }

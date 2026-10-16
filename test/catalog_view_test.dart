@@ -440,12 +440,55 @@ void main() {
       directions: const [],
     );
     final label = assigned.map((tag) => tag.titleCase).join(', ');
+    final count = '${recipe.servings.plainNumber} servings';
 
-    expect(recipe.subtitle, '$label · ${recipe.servings.plainNumber} servings');
+    expect(recipe.subtitle, '$label · $count');
+    expect(recipe.subtitleOmitting({assigned.first}), '${assigned.last.titleCase} · $count');
+    expect(recipe.subtitleOmitting(assigned.toSet()), count);
     for (final tag in tags) {
       if (assigned.contains(tag)) continue;
       expect(recipe.subtitle, isNot(contains(tag.titleCase)));
     }
+  });
+
+  testWidgets('selected tags have no check mark and leave the list subtitle', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(CatalogPage.wideLayoutWidth, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(const App());
+    await tester.pumpAndSettle();
+
+    final recipe = recipes.firstWhere(
+      (recipe) => recipe.tags.length > 1 && recipe.servingsSpecified,
+    );
+    final dropped = recipe.tags.first;
+    await _reveal(tester, recipe);
+    expect(_tileSubtitle(tester, recipe.name), recipe.subtitle);
+
+    await tester.tap(find.byKey(ValueKey('tag-$dropped')));
+    await tester.pumpAndSettle();
+    expect(
+      tester.widgetList<FilterChip>(find.byType(FilterChip)).map((chip) => chip.showCheckmark),
+      everyElement(isFalse),
+    );
+    expect(tester.widget<FilterChip>(find.byKey(ValueKey('tag-$dropped'))).selected, isTrue);
+    expect(_tileSubtitle(tester, recipe.name), recipe.subtitleOmitting(selectedTags.value));
+
+    final detail = find.byKey(const ValueKey('recipe-detail'));
+    expect(find.descendant(of: detail, matching: find.text(recipe.subtitle)), findsNothing);
+    await tester.tap(find.byKey(ValueKey('recipe-${recipe.name}')));
+    await tester.pumpAndSettle();
+    expect(find.descendant(of: detail, matching: find.text(recipe.subtitle)), findsOneWidget);
+    expect(_tileSubtitle(tester, recipe.name), recipe.subtitleOmitting({dropped}));
+
+    final lone = recipes.firstWhere(
+      (candidate) =>
+          candidate.tags.length == 1 &&
+          candidate.tags.single == dropped &&
+          !candidate.servingsSpecified,
+    );
+    await _reveal(tester, lone);
+    expect(_tileSubtitle(tester, lone.name), isNull);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('a narrow catalog bar places the menu with the app bar actions', (tester) async {
@@ -541,6 +584,19 @@ ListTile _tile(WidgetTester tester, String name) {
   return tester.widget<ListTile>(
     find.descendant(of: find.byKey(ValueKey('recipe-$name')), matching: find.byType(ListTile)),
   );
+}
+
+String? _tileSubtitle(WidgetTester tester, String name) {
+  final subtitle = _tile(tester, name).subtitle;
+  if (subtitle is! Text) return null;
+  return subtitle.data;
+}
+
+Future<void> _reveal(WidgetTester tester, Recipe recipe) async {
+  await tester.enterText(find.byKey(const ValueKey('recipe-search')), recipe.name);
+  await tester.pumpAndSettle();
+  final tile = find.byKey(ValueKey('recipe-${recipe.name}'));
+  await tester.scrollUntilVisible(tile, 400, scrollable: _listScroll);
 }
 
 final _listScroll = find.descendant(

@@ -1,9 +1,12 @@
+import 'dart:convert';
 import 'dart:ui' as ui;
 
 import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:signal_widgets/signal_widgets.dart';
 
+import 'package:offline_recipes/catalog/catalog.dart';
+import 'package:offline_recipes/catalog_view/catalog_view.dart';
 import 'package:offline_recipes/measure.dart';
 
 part 'src/page.dart';
@@ -33,6 +36,61 @@ final colorSchemeHue = PersistedDoubleSignal(defaultHue, 'colorSchemeHue');
 /// Hue the theme and the slider show. Saved to [colorSchemeHue] when the pointer lifts.
 final _previewHue = signal(colorSchemeHue.peek());
 final Computed<Color> colorSchemeSeed = computed(() => colorForHue(_previewHue.value));
+
+/// Saved tag hues, in degrees. A missing tag uses [defaultHueForTag].
+final PersistedSignal<Map<String, double>> tagHues = _TagHues();
+
+/// Hue a slider is dragging. Saved to [tagHues] when the pointer lifts.
+final _tagHuePreview = signal<({String tag, double hue})?>(null);
+
+/// Hue of [tag], in degrees, including a drag that has not been saved yet.
+double hueForTag(String tag) {
+  final preview = _tagHuePreview.value;
+  if (preview != null && preview.tag == tag) {
+    return ui.clampDouble(preview.hue, 0, 360);
+  }
+  return ui.clampDouble(tagHues.value[tag] ?? defaultHueForTag(tag), 0, 360);
+}
+
+/// Hue for a tag nobody has recolored.
+///
+/// Mixed from [tag]'s code units, so it stays put across restarts and a new tag does not recolor
+/// the others.
+@visibleForTesting
+double defaultHueForTag(String tag) {
+  // Fold on every step so the mix stays an exact integer on the web.
+  var hash = 0;
+  for (final unit in tag.codeUnits) {
+    hash = (hash * 31 + unit) % 1000003;
+  }
+  // 289 is coprime with 360, so this walks the wheel instead of leaving nearby hashes nearby.
+  return ((hash * 289) % 360).toDouble();
+}
+
+class _TagHues extends PersistedSignal<Map<String, double>> {
+  new()
+    : super(const <String, double>{}, key: 'tagHues', store: SignalsKeyValueStore.defaultStore);
+
+  @override
+  Map<String, double> decode(String value) {
+    final Object? decoded;
+    try {
+      decoded = jsonDecode(value);
+    } on FormatException {
+      return const {};
+    }
+    if (decoded is! Map) return const {};
+    final hues = <String, double>{};
+    for (final MapEntry(:key, :value) in Map<Object?, Object?>.from(decoded).entries) {
+      if (key is! String || value is! num || !value.isFinite) continue;
+      hues[key] = value.toDouble();
+    }
+    return hues;
+  }
+
+  @override
+  String encode(Map<String, double> value) => jsonEncode(value);
+}
 
 final unitNames = PersistedEnumSignal<UnitNames>(.full, 'unitNames', UnitNames.values);
 final listPrice = PersistedEnumSignal<ListPrice>(.serving, 'listPrice', ListPrice.values);
@@ -72,6 +130,7 @@ Future<void> loadSettings() async {
   await (
     themeMode.init(),
     colorSchemeHue.init(),
+    tagHues.init(),
     unitNames.init(),
     listPrice.init(),
     textSize.init(),
@@ -86,6 +145,8 @@ void debugResetSettings() {
   themeMode.value = .system;
   colorSchemeHue.value = defaultHue;
   _previewHue.value = colorSchemeHue.value;
+  _tagHuePreview.value = null;
+  tagHues.value = const {};
   unitNames.value = .full;
   listPrice.value = .serving;
   textSize.value = .normal;
